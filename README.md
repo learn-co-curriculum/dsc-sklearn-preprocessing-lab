@@ -1621,7 +1621,28 @@ FireplaceQu: Fireplace quality
 ...
 ```
 
-Eventually we will still need to perform some preprocessing to prepare the `FireplaceQu` column for modeling (because models require numeric inputs), but we don't need to worry about filling in missing values.
+So, let's replace those NaNs with the string "N/A" to indicate that this is a real category, not missing data:
+
+
+```python
+X_train["FireplaceQu"] = X_train["FireplaceQu"].fillna("N/A")
+X_train["FireplaceQu"].value_counts()
+```
+
+
+
+
+    N/A    512
+    Gd     286
+    TA     236
+    Fa      26
+    Ex      19
+    Po      16
+    Name: FireplaceQu, dtype: int64
+
+
+
+Eventually we will still need to perform some preprocessing to prepare the `FireplaceQu` column for modeling (because models require numeric inputs rather than inputs of type `object`), but we don't need to worry about filling in missing values.
 
 ### Lot Frontage
 
@@ -1819,7 +1840,7 @@ X_train
       <td>2</td>
       <td>6</td>
       <td>0</td>
-      <td>NaN</td>
+      <td>N/A</td>
       <td>10</td>
       <td>2009</td>
       <td>False</td>
@@ -1857,7 +1878,7 @@ X_train
       <td>4</td>
       <td>7</td>
       <td>0</td>
-      <td>NaN</td>
+      <td>N/A</td>
       <td>4</td>
       <td>2007</td>
       <td>False</td>
@@ -1933,7 +1954,7 @@ X_train
       <td>2</td>
       <td>5</td>
       <td>0</td>
-      <td>NaN</td>
+      <td>N/A</td>
       <td>4</td>
       <td>2006</td>
       <td>False</td>
@@ -2138,7 +2159,7 @@ X_train
       <td>2</td>
       <td>6</td>
       <td>0</td>
-      <td>NaN</td>
+      <td>N/A</td>
       <td>10</td>
       <td>2009</td>
       <td>False</td>
@@ -2176,7 +2197,7 @@ X_train
       <td>4</td>
       <td>7</td>
       <td>0</td>
-      <td>NaN</td>
+      <td>N/A</td>
       <td>4</td>
       <td>2007</td>
       <td>False</td>
@@ -2252,7 +2273,7 @@ X_train
       <td>2</td>
       <td>5</td>
       <td>0</td>
-      <td>NaN</td>
+      <td>N/A</td>
       <td>4</td>
       <td>2006</td>
       <td>False</td>
@@ -2319,24 +2340,2064 @@ X_train.isna().sum()
 
 
 
-    LotFrontage              0
-    LotArea                  0
-    Street                   0
-    OverallQual              0
-    OverallCond              0
-    YearBuilt                0
-    YearRemodAdd             0
-    GrLivArea                0
-    FullBath                 0
-    BedroomAbvGr             0
-    TotRmsAbvGrd             0
-    Fireplaces               0
-    FireplaceQu            512
-    MoSold                   0
-    YrSold                   0
-    LotFrontage_Missing      0
+    LotFrontage            0
+    LotArea                0
+    Street                 0
+    OverallQual            0
+    OverallCond            0
+    YearBuilt              0
+    YearRemodAdd           0
+    GrLivArea              0
+    FullBath               0
+    BedroomAbvGr           0
+    TotRmsAbvGrd           0
+    Fireplaces             0
+    FireplaceQu            0
+    MoSold                 0
+    YrSold                 0
+    LotFrontage_Missing    0
     dtype: int64
 
 
 
 Great! Now we have completed Step 2.
+
+## 3. Convert Categorical Features into Numbers
+
+Despite dropping irrelevant columns and filling in those NaN values, if we feed the current `X_train` into our scikit-learn `ElasticNet` model, it will crash:
+
+
+```python
+model.fit(X_train, y_train)
+```
+
+
+    ---------------------------------------------------------------------------
+
+    ValueError                                Traceback (most recent call last)
+
+    <ipython-input-22-5a4f775ea40e> in <module>
+          1 # __SOLUTION__
+    ----> 2 model.fit(X_train, y_train)
+    
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/linear_model/_coordinate_descent.py in fit(self, X, y, sample_weight, check_input)
+        757         if check_input:
+        758             X_copied = self.copy_X and self.fit_intercept
+    --> 759             X, y = self._validate_data(X, y, accept_sparse='csc',
+        760                                        order='F',
+        761                                        dtype=[np.float64, np.float32],
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/base.py in _validate_data(self, X, y, reset, validate_separately, **check_params)
+        430                 y = check_array(y, **check_y_params)
+        431             else:
+    --> 432                 X, y = check_X_y(X, y, **check_params)
+        433             out = X, y
+        434 
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/utils/validation.py in inner_f(*args, **kwargs)
+         70                           FutureWarning)
+         71         kwargs.update({k: arg for k, arg in zip(sig.parameters, args)})
+    ---> 72         return f(**kwargs)
+         73     return inner_f
+         74 
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/utils/validation.py in check_X_y(X, y, accept_sparse, accept_large_sparse, dtype, order, copy, force_all_finite, ensure_2d, allow_nd, multi_output, ensure_min_samples, ensure_min_features, y_numeric, estimator)
+        793         raise ValueError("y cannot be None")
+        794 
+    --> 795     X = check_array(X, accept_sparse=accept_sparse,
+        796                     accept_large_sparse=accept_large_sparse,
+        797                     dtype=dtype, order=order, copy=copy,
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/utils/validation.py in inner_f(*args, **kwargs)
+         70                           FutureWarning)
+         71         kwargs.update({k: arg for k, arg in zip(sig.parameters, args)})
+    ---> 72         return f(**kwargs)
+         73     return inner_f
+         74 
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/utils/validation.py in check_array(array, accept_sparse, accept_large_sparse, dtype, order, copy, force_all_finite, ensure_2d, allow_nd, ensure_min_samples, ensure_min_features, estimator)
+        596                     array = array.astype(dtype, casting="unsafe", copy=False)
+        597                 else:
+    --> 598                     array = np.asarray(array, order=order, dtype=dtype)
+        599             except ComplexWarning:
+        600                 raise ValueError("Complex data not supported\n"
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/numpy/core/_asarray.py in asarray(a, dtype, order)
+         83 
+         84     """
+    ---> 85     return array(a, dtype, copy=False, order=order)
+         86 
+         87 
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/pandas/core/generic.py in __array__(self, dtype)
+       1779 
+       1780     def __array__(self, dtype=None) -> np.ndarray:
+    -> 1781         return np.asarray(self._values, dtype=dtype)
+       1782 
+       1783     def __array_wrap__(self, result, context=None):
+
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/numpy/core/_asarray.py in asarray(a, dtype, order)
+         83 
+         84     """
+    ---> 85     return array(a, dtype, copy=False, order=order)
+         86 
+         87 
+
+
+    ValueError: could not convert string to float: 'Pave'
+
+
+Now the first column to cause a problem is `Street`, which is documented like this:
+
+```
+...
+Street: Type of road access to property
+
+       Grvl	Gravel	
+       Pave	Paved
+...
+```
+
+Let's look at the full `X_train`:
+
+
+```python
+X_train.info()
+```
+
+    <class 'pandas.core.frame.DataFrame'>
+    Int64Index: 1095 entries, 1023 to 1126
+    Data columns (total 16 columns):
+     #   Column               Non-Null Count  Dtype  
+    ---  ------               --------------  -----  
+     0   LotFrontage          1095 non-null   float64
+     1   LotArea              1095 non-null   int64  
+     2   Street               1095 non-null   object 
+     3   OverallQual          1095 non-null   int64  
+     4   OverallCond          1095 non-null   int64  
+     5   YearBuilt            1095 non-null   int64  
+     6   YearRemodAdd         1095 non-null   int64  
+     7   GrLivArea            1095 non-null   int64  
+     8   FullBath             1095 non-null   int64  
+     9   BedroomAbvGr         1095 non-null   int64  
+     10  TotRmsAbvGrd         1095 non-null   int64  
+     11  Fireplaces           1095 non-null   int64  
+     12  FireplaceQu          1095 non-null   object 
+     13  MoSold               1095 non-null   int64  
+     14  YrSold               1095 non-null   int64  
+     15  LotFrontage_Missing  1095 non-null   bool   
+    dtypes: bool(1), float64(1), int64(12), object(2)
+    memory usage: 137.9+ KB
+
+
+So, our model is crashing because some of the columns are non-numeric.
+
+Anything that is already `float64` or `int64` will work with our model, but these features need to be converted:
+
+* `Street` (currently type `object`)
+* `FireplaceQu` (currently type `object`)
+* `LotFrontage_Missing` (currently type `bool`)
+
+There are two main approaches to converting these values, depending on whether there are 2 values (meaning the categorical variable can be converted into a single binary number) or more than 2 values (meaning we need to create extra columns to represent all categories). (If there is only 1 value, this is not a useful feature for the purposes of predictive analysis.)
+
+In the cell below, we inspect the value counts of the specified features:
+
+
+```python
+
+print(X_train["Street"].value_counts())
+print()
+print(X_train["FireplaceQu"].value_counts())
+print()
+print(X_train["LotFrontage_Missing"].value_counts())
+```
+
+    Pave    1091
+    Grvl       4
+    Name: Street, dtype: int64
+    
+    N/A    512
+    Gd     286
+    TA     236
+    Fa      26
+    Ex      19
+    Po      16
+    Name: FireplaceQu, dtype: int64
+    
+    False    895
+    True     200
+    Name: LotFrontage_Missing, dtype: int64
+
+
+So, it looks like `Street` and `LotFrontage_Missing` have only 2 categories and can be converted into binary in place, whereas `FireplaceQu` has 6 categories and will need to be expanded into multiple columns.
+
+### Binary Categories
+
+For binary categories, we will use `LabelBinarizer` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelBinarizer.html)) to convert the categories of `Street` and `LotFrontage_Missing` into binary values (0s and 1s).
+
+Just like in Step 2 when we used the `MissingIndicator` and `SimpleImputer`, we will follow these steps:
+
+1. Identify data to be transformed
+2. Instantiate the transformer object
+3. Fit the transformer object (on training data only)
+4. Transform data using the transformer object
+5. Add the transformed data to the other data that was not transformed
+
+Let's start with transforming `Street`:
+
+
+```python
+
+# (0) import LabelBinarizer from sklearn.preprocessing
+from sklearn.preprocessing import LabelBinarizer
+
+# (1) Create a variable street_train that is the
+# relevant column from X_train
+street_train = X_train["Street"]
+
+# (2) Instantiate a LabelBinarizer
+binarizer_street = LabelBinarizer()
+
+# (3) Fit the binarizer on street_train
+binarizer_street.fit(street_train)
+
+# Inspect the classes of the fitted binarizer
+binarizer_street.classes_
+```
+
+
+
+
+    array(['Grvl', 'Pave'], dtype='<U4')
+
+
+
+The `.classes_` attribute of `LabelBinarizer` is only present once the `.fit` method has been called. (The trailing `_` indicates this convention.)
+
+What this tells us is that when `binarizer_street` is used to transform the street data into 1s and 0s, `0` will mean `'Grvl'` (gravel) in the original data, and `1` will mean `'Pave'` (paved) in the original data.
+
+The eventual scikit-learn model only cares about the 1s and 0s, but this information can be useful for us to understand what our code is doing and help us debug when things go wrong.
+
+Now let's transform `street_train` with the fitted binarizer:
+
+
+```python
+
+# (4) Transform street_train using the binarizer and
+# assign the result to street_binarized_train
+street_binarized_train = binarizer_street.transform(street_train)
+
+# Visually inspect street_binarized_train
+street_binarized_train
+```
+
+
+
+
+    array([[1],
+           [1],
+           [1],
+           ...,
+           [1],
+           [1],
+           [1]])
+
+
+
+All of the values we see appear to be `1` right now, but that makes sense since there were only 4 properties with gravel (`0`) streets in `X_train`.
+
+Now let's replace the original `Street` column with the binarized version:
+
+
+```python
+
+# (5) Replace value of Street
+X_train["Street"] = street_binarized_train
+
+# Visually inspect X_train
+X_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage</th>
+      <th>LotArea</th>
+      <th>Street</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>YearBuilt</th>
+      <th>YearRemodAdd</th>
+      <th>GrLivArea</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>FireplaceQu</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>43.0</td>
+      <td>3182</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2005</td>
+      <td>2006</td>
+      <td>1504</td>
+      <td>2</td>
+      <td>2</td>
+      <td>7</td>
+      <td>1</td>
+      <td>Gd</td>
+      <td>5</td>
+      <td>2008</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>78.0</td>
+      <td>10140</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1974</td>
+      <td>1999</td>
+      <td>1309</td>
+      <td>1</td>
+      <td>3</td>
+      <td>5</td>
+      <td>1</td>
+      <td>Fa</td>
+      <td>1</td>
+      <td>2006</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>60.0</td>
+      <td>9060</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>1939</td>
+      <td>1950</td>
+      <td>1258</td>
+      <td>1</td>
+      <td>2</td>
+      <td>6</td>
+      <td>0</td>
+      <td>N/A</td>
+      <td>10</td>
+      <td>2009</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>70.0</td>
+      <td>12342</td>
+      <td>1</td>
+      <td>5</td>
+      <td>5</td>
+      <td>1960</td>
+      <td>1978</td>
+      <td>1422</td>
+      <td>1</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>TA</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>75.0</td>
+      <td>9750</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1958</td>
+      <td>1958</td>
+      <td>1442</td>
+      <td>1</td>
+      <td>4</td>
+      <td>7</td>
+      <td>0</td>
+      <td>N/A</td>
+      <td>4</td>
+      <td>2007</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>78.0</td>
+      <td>9317</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>2006</td>
+      <td>2006</td>
+      <td>1314</td>
+      <td>2</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>Gd</td>
+      <td>3</td>
+      <td>2007</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>65.0</td>
+      <td>7804</td>
+      <td>1</td>
+      <td>4</td>
+      <td>3</td>
+      <td>1928</td>
+      <td>1950</td>
+      <td>1981</td>
+      <td>2</td>
+      <td>4</td>
+      <td>7</td>
+      <td>2</td>
+      <td>TA</td>
+      <td>12</td>
+      <td>2009</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>60.0</td>
+      <td>8172</td>
+      <td>1</td>
+      <td>5</td>
+      <td>7</td>
+      <td>1955</td>
+      <td>1990</td>
+      <td>864</td>
+      <td>1</td>
+      <td>2</td>
+      <td>5</td>
+      <td>0</td>
+      <td>N/A</td>
+      <td>4</td>
+      <td>2006</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>55.0</td>
+      <td>7642</td>
+      <td>1</td>
+      <td>7</td>
+      <td>8</td>
+      <td>1918</td>
+      <td>1998</td>
+      <td>1426</td>
+      <td>1</td>
+      <td>3</td>
+      <td>7</td>
+      <td>1</td>
+      <td>Gd</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>53.0</td>
+      <td>3684</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2007</td>
+      <td>2007</td>
+      <td>1555</td>
+      <td>2</td>
+      <td>2</td>
+      <td>7</td>
+      <td>1</td>
+      <td>TA</td>
+      <td>6</td>
+      <td>2009</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 16 columns</p>
+</div>
+
+
+
+
+```python
+
+X_train.info()
+```
+
+    <class 'pandas.core.frame.DataFrame'>
+    Int64Index: 1095 entries, 1023 to 1126
+    Data columns (total 16 columns):
+     #   Column               Non-Null Count  Dtype  
+    ---  ------               --------------  -----  
+     0   LotFrontage          1095 non-null   float64
+     1   LotArea              1095 non-null   int64  
+     2   Street               1095 non-null   int64  
+     3   OverallQual          1095 non-null   int64  
+     4   OverallCond          1095 non-null   int64  
+     5   YearBuilt            1095 non-null   int64  
+     6   YearRemodAdd         1095 non-null   int64  
+     7   GrLivArea            1095 non-null   int64  
+     8   FullBath             1095 non-null   int64  
+     9   BedroomAbvGr         1095 non-null   int64  
+     10  TotRmsAbvGrd         1095 non-null   int64  
+     11  Fireplaces           1095 non-null   int64  
+     12  FireplaceQu          1095 non-null   object 
+     13  MoSold               1095 non-null   int64  
+     14  YrSold               1095 non-null   int64  
+     15  LotFrontage_Missing  1095 non-null   bool   
+    dtypes: bool(1), float64(1), int64(13), object(1)
+    memory usage: 137.9+ KB
+
+
+Perfect! Now `Street` should by type `int64` instead of `object`.
+
+Now, repeat the same process with `LotFrontage_Missing`:
+
+
+```python
+
+# (1) We already have a variable frontage_missing_train
+# from earlier, no additional step needed
+
+# (2) Instantiate a LabelBinarizer for missing frontage
+binarizer_frontage_missing = LabelBinarizer()
+
+# (3) Fit the binarizer on frontage_missing_train
+binarizer_frontage_missing.fit(frontage_missing_train)
+
+# Inspect the classes of the fitted binarizer
+binarizer_frontage_missing.classes_
+```
+
+
+
+
+    array([False,  True])
+
+
+
+
+```python
+
+# (4) Transform frontage_missing_train using the binarizer and
+# assign the result to frontage_missing_binarized_train
+frontage_missing_binarized_train = binarizer_frontage_missing.transform(frontage_missing_train)
+
+# Visually inspect frontage_missing_binarized_train
+frontage_missing_binarized_train
+```
+
+
+
+
+    array([[0],
+           [0],
+           [0],
+           ...,
+           [0],
+           [0],
+           [0]])
+
+
+
+
+```python
+
+# (5) Replace value of LotFrontage_Missing
+X_train["LotFrontage_Missing"] = frontage_missing_binarized_train
+
+# Visually inspect X_train
+X_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage</th>
+      <th>LotArea</th>
+      <th>Street</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>YearBuilt</th>
+      <th>YearRemodAdd</th>
+      <th>GrLivArea</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>FireplaceQu</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>43.0</td>
+      <td>3182</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2005</td>
+      <td>2006</td>
+      <td>1504</td>
+      <td>2</td>
+      <td>2</td>
+      <td>7</td>
+      <td>1</td>
+      <td>Gd</td>
+      <td>5</td>
+      <td>2008</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>78.0</td>
+      <td>10140</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1974</td>
+      <td>1999</td>
+      <td>1309</td>
+      <td>1</td>
+      <td>3</td>
+      <td>5</td>
+      <td>1</td>
+      <td>Fa</td>
+      <td>1</td>
+      <td>2006</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>60.0</td>
+      <td>9060</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>1939</td>
+      <td>1950</td>
+      <td>1258</td>
+      <td>1</td>
+      <td>2</td>
+      <td>6</td>
+      <td>0</td>
+      <td>N/A</td>
+      <td>10</td>
+      <td>2009</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>70.0</td>
+      <td>12342</td>
+      <td>1</td>
+      <td>5</td>
+      <td>5</td>
+      <td>1960</td>
+      <td>1978</td>
+      <td>1422</td>
+      <td>1</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>TA</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>75.0</td>
+      <td>9750</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1958</td>
+      <td>1958</td>
+      <td>1442</td>
+      <td>1</td>
+      <td>4</td>
+      <td>7</td>
+      <td>0</td>
+      <td>N/A</td>
+      <td>4</td>
+      <td>2007</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>78.0</td>
+      <td>9317</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>2006</td>
+      <td>2006</td>
+      <td>1314</td>
+      <td>2</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>Gd</td>
+      <td>3</td>
+      <td>2007</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>65.0</td>
+      <td>7804</td>
+      <td>1</td>
+      <td>4</td>
+      <td>3</td>
+      <td>1928</td>
+      <td>1950</td>
+      <td>1981</td>
+      <td>2</td>
+      <td>4</td>
+      <td>7</td>
+      <td>2</td>
+      <td>TA</td>
+      <td>12</td>
+      <td>2009</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>60.0</td>
+      <td>8172</td>
+      <td>1</td>
+      <td>5</td>
+      <td>7</td>
+      <td>1955</td>
+      <td>1990</td>
+      <td>864</td>
+      <td>1</td>
+      <td>2</td>
+      <td>5</td>
+      <td>0</td>
+      <td>N/A</td>
+      <td>4</td>
+      <td>2006</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>55.0</td>
+      <td>7642</td>
+      <td>1</td>
+      <td>7</td>
+      <td>8</td>
+      <td>1918</td>
+      <td>1998</td>
+      <td>1426</td>
+      <td>1</td>
+      <td>3</td>
+      <td>7</td>
+      <td>1</td>
+      <td>Gd</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>53.0</td>
+      <td>3684</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2007</td>
+      <td>2007</td>
+      <td>1555</td>
+      <td>2</td>
+      <td>2</td>
+      <td>7</td>
+      <td>1</td>
+      <td>TA</td>
+      <td>6</td>
+      <td>2009</td>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 16 columns</p>
+</div>
+
+
+
+
+```python
+
+X_train.info()
+```
+
+    <class 'pandas.core.frame.DataFrame'>
+    Int64Index: 1095 entries, 1023 to 1126
+    Data columns (total 16 columns):
+     #   Column               Non-Null Count  Dtype  
+    ---  ------               --------------  -----  
+     0   LotFrontage          1095 non-null   float64
+     1   LotArea              1095 non-null   int64  
+     2   Street               1095 non-null   int64  
+     3   OverallQual          1095 non-null   int64  
+     4   OverallCond          1095 non-null   int64  
+     5   YearBuilt            1095 non-null   int64  
+     6   YearRemodAdd         1095 non-null   int64  
+     7   GrLivArea            1095 non-null   int64  
+     8   FullBath             1095 non-null   int64  
+     9   BedroomAbvGr         1095 non-null   int64  
+     10  TotRmsAbvGrd         1095 non-null   int64  
+     11  Fireplaces           1095 non-null   int64  
+     12  FireplaceQu          1095 non-null   object 
+     13  MoSold               1095 non-null   int64  
+     14  YrSold               1095 non-null   int64  
+     15  LotFrontage_Missing  1095 non-null   int64  
+    dtypes: float64(1), int64(14), object(1)
+    memory usage: 145.4+ KB
+
+
+Great, now we only have 1 column remaining that isn't type `float64` or `int64`!
+
+#### Note on Preprocessing Binary Values
+For binary values like `LotFrontage_Missing`, you might see a few different approaches to preprocessing. Python treats `True` and `1` as equal:
+
+
+```python
+print(True == 1)
+print(False == 0)
+```
+
+    True
+    True
+
+
+This means that if your model is purely using Python, you actually might just be able to leave columns as type `bool` without any issues. You will likely see examples that do this. However if your model relies on C or Java "under the hood", this might cause problems.
+
+There is also a technique using `pandas` rather than scikit-learn for this particular conversion of boolean values to integers:
+
+
+```python
+df_example = pd.DataFrame(frontage_missing_train, columns=["LotFrontage_Missing"])
+df_example
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage_Missing</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>True</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1090</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1091</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1092</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1093</th>
+      <td>False</td>
+    </tr>
+    <tr>
+      <th>1094</th>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 1 columns</p>
+</div>
+
+
+
+
+```python
+df_example["LotFrontage_Missing"] = df_example["LotFrontage_Missing"].astype(int)
+df_example
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage_Missing</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1090</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1091</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1092</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1093</th>
+      <td>0</td>
+    </tr>
+    <tr>
+      <th>1094</th>
+      <td>0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 1 columns</p>
+</div>
+
+
+
+This code is casting every value in the `LotFrontage_Missing` column to an integer, achieving the same result as the `LabelBinarizer` example with less code.
+
+The downside of using this approach is that it doesn't fit into a scikit-learn pipeline as neatly because it is using `pandas` to do the transformation instead of scikit-learn.
+
+In the future, you will need to make your own determination of which strategy to use!
+
+### Multiple Categories
+
+Unlike `Street` and `LotFrontage_Missing`, `FireplaceQu` has more than two categories. Therefore the process for encoding it numerically is a bit more complicated, because we will need to create multiple "dummy" columns that are each representing one category.
+
+To do this, we can use a `OneHotEncoder` from `sklearn.preprocessing` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html)).
+
+The first several steps are very similar to all of the other transformers we've used so far, although the process of combining the data with the original data differs.
+
+In the cells below, complete steps `(0)`-`(4)` of preprocessing the `FireplaceQu` column using a `OneHotEncoder`:
+
+
+```python
+
+# (0) import OneHotEncoder from sklearn.preprocessing
+from sklearn.preprocessing import OneHotEncoder
+
+# (1) Create a variable fireplace_qu_train
+# extracted from X_train
+# (double brackets due to shape expected by OHE)
+fireplace_qu_train = X_train[["FireplaceQu"]]
+
+# (2) Instantiate a OneHotEncoder with categories="auto",
+# sparse=False, and handle_unknown="ignore"
+ohe = OneHotEncoder(categories="auto", sparse=False, handle_unknown="ignore")
+
+# (3) Fit the encoder on fireplace_qu_train
+ohe.fit(fireplace_qu_train)
+
+# Inspect the categories of the fitted encoder
+ohe.categories_
+```
+
+
+
+
+    [array(['Ex', 'Fa', 'Gd', 'N/A', 'Po', 'TA'], dtype=object)]
+
+
+
+
+```python
+
+# (4) Transform fireplace_qu_train using the encoder and
+# assign the result to fireplace_qu_encoded_train
+fireplace_qu_encoded_train = ohe.transform(fireplace_qu_train)
+
+# Visually inspect fireplace_qu_encoded_train
+fireplace_qu_encoded_train
+```
+
+
+
+
+    array([[0., 0., 1., 0., 0., 0.],
+           [0., 1., 0., 0., 0., 0.],
+           [0., 0., 0., 1., 0., 0.],
+           ...,
+           [0., 0., 0., 1., 0., 0.],
+           [0., 0., 1., 0., 0., 0.],
+           [0., 0., 0., 0., 0., 1.]])
+
+
+
+Notice that this time, unlike with `MissingIndicator`, `SimpleImputer`, or `LabelBinarizer`, we have created multiple columns of data out of a single column. The code below converts this unlabeled NumPy array into a readable pandas dataframe in preparation for merging it back with the rest of `X_train`:
+
+
+```python
+
+# (5a) Make the transformed data into a dataframe
+fireplace_qu_encoded_train = pd.DataFrame(
+    # Pass in NumPy array
+    fireplace_qu_encoded_train,
+    # Set the column names to the categories found by OHE
+    columns=ohe.categories_[0],
+    # Set the index to match X_train's index
+    index=X_train.index
+)
+
+# Visually inspect new dataframe
+fireplace_qu_encoded_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Ex</th>
+      <th>Fa</th>
+      <th>Gd</th>
+      <th>N/A</th>
+      <th>Po</th>
+      <th>TA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 6 columns</p>
+</div>
+
+
+
+A couple notes on the code above:
+
+* The main goal of converting this into a dataframe (rather than converting `X_train` into a NumPy array, which would also allow them to be combined) is **readability** — to help you and others understand what your code is doing, and to help you debug. Eventually when you write this code as a pipeline, it will be NumPy arrays "under the hood".
+* We are using just the **raw categories** from `FireplaceQu` as our new dataframe columns, but you'll also see examples where a lambda function or list comprehension is used to create column names indicating the original column name, e.g. `FireplaceQu_Ex`, `FireplaceQu_Fa` rather than just `Ex`, `Fa`. This is a design decision based on readability — the scikit-learn model will work the same either way.
+* It is very important that **the index of the new dataframe matches the index of the main `X_train` dataframe**. Because we used `train_test_split`, the index of `X_train` is shuffled, so it goes `1023`, `810`, `1384` etc. instead of `0`, `1`, `2`, etc. If you don't specify an index for the new dataframe, it will assign the first record to the index `0` rather than `1023`. If you are ever merging encoded data like this and a bunch of NaNs start appearing, make sure that the indexes are lined up correctly! You also may see examples where the index of `X_train` has been reset, rather than specifying the index of the new dataframe — either way works.
+
+Next, we want to concatenate the new dataframe together with the original `X_train`:
+
+
+```python
+
+# (5b) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
+
+# Visually inspect X_train
+X_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage</th>
+      <th>LotArea</th>
+      <th>Street</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>YearBuilt</th>
+      <th>YearRemodAdd</th>
+      <th>GrLivArea</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>...</th>
+      <th>FireplaceQu</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>Ex</th>
+      <th>Fa</th>
+      <th>Gd</th>
+      <th>N/A</th>
+      <th>Po</th>
+      <th>TA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>43.0</td>
+      <td>3182</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2005</td>
+      <td>2006</td>
+      <td>1504</td>
+      <td>2</td>
+      <td>2</td>
+      <td>...</td>
+      <td>Gd</td>
+      <td>5</td>
+      <td>2008</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>78.0</td>
+      <td>10140</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1974</td>
+      <td>1999</td>
+      <td>1309</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>Fa</td>
+      <td>1</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>60.0</td>
+      <td>9060</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>1939</td>
+      <td>1950</td>
+      <td>1258</td>
+      <td>1</td>
+      <td>2</td>
+      <td>...</td>
+      <td>N/A</td>
+      <td>10</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>70.0</td>
+      <td>12342</td>
+      <td>1</td>
+      <td>5</td>
+      <td>5</td>
+      <td>1960</td>
+      <td>1978</td>
+      <td>1422</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>TA</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>75.0</td>
+      <td>9750</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1958</td>
+      <td>1958</td>
+      <td>1442</td>
+      <td>1</td>
+      <td>4</td>
+      <td>...</td>
+      <td>N/A</td>
+      <td>4</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>78.0</td>
+      <td>9317</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>2006</td>
+      <td>2006</td>
+      <td>1314</td>
+      <td>2</td>
+      <td>3</td>
+      <td>...</td>
+      <td>Gd</td>
+      <td>3</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>65.0</td>
+      <td>7804</td>
+      <td>1</td>
+      <td>4</td>
+      <td>3</td>
+      <td>1928</td>
+      <td>1950</td>
+      <td>1981</td>
+      <td>2</td>
+      <td>4</td>
+      <td>...</td>
+      <td>TA</td>
+      <td>12</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>60.0</td>
+      <td>8172</td>
+      <td>1</td>
+      <td>5</td>
+      <td>7</td>
+      <td>1955</td>
+      <td>1990</td>
+      <td>864</td>
+      <td>1</td>
+      <td>2</td>
+      <td>...</td>
+      <td>N/A</td>
+      <td>4</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>55.0</td>
+      <td>7642</td>
+      <td>1</td>
+      <td>7</td>
+      <td>8</td>
+      <td>1918</td>
+      <td>1998</td>
+      <td>1426</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>Gd</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>53.0</td>
+      <td>3684</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2007</td>
+      <td>2007</td>
+      <td>1555</td>
+      <td>2</td>
+      <td>2</td>
+      <td>...</td>
+      <td>TA</td>
+      <td>6</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 22 columns</p>
+</div>
+
+
+
+Finally, we want to drop the original `FireplaceQu` column containing the categorical data:
+
+(For previous transformations we didn't need to drop anything because we were replacing 1 column with 1 new column in place, but one-hot encoding works differently.)
+
+
+```python
+
+# (5c) Drop original FireplaceQu column
+X_train.drop("FireplaceQu", axis=1, inplace=True)
+
+# Visually inspect X_train
+X_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage</th>
+      <th>LotArea</th>
+      <th>Street</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>YearBuilt</th>
+      <th>YearRemodAdd</th>
+      <th>GrLivArea</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>...</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>Ex</th>
+      <th>Fa</th>
+      <th>Gd</th>
+      <th>N/A</th>
+      <th>Po</th>
+      <th>TA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>43.0</td>
+      <td>3182</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2005</td>
+      <td>2006</td>
+      <td>1504</td>
+      <td>2</td>
+      <td>2</td>
+      <td>...</td>
+      <td>1</td>
+      <td>5</td>
+      <td>2008</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>78.0</td>
+      <td>10140</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1974</td>
+      <td>1999</td>
+      <td>1309</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>60.0</td>
+      <td>9060</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>1939</td>
+      <td>1950</td>
+      <td>1258</td>
+      <td>1</td>
+      <td>2</td>
+      <td>...</td>
+      <td>0</td>
+      <td>10</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>70.0</td>
+      <td>12342</td>
+      <td>1</td>
+      <td>5</td>
+      <td>5</td>
+      <td>1960</td>
+      <td>1978</td>
+      <td>1422</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>75.0</td>
+      <td>9750</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1958</td>
+      <td>1958</td>
+      <td>1442</td>
+      <td>1</td>
+      <td>4</td>
+      <td>...</td>
+      <td>0</td>
+      <td>4</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>78.0</td>
+      <td>9317</td>
+      <td>1</td>
+      <td>6</td>
+      <td>5</td>
+      <td>2006</td>
+      <td>2006</td>
+      <td>1314</td>
+      <td>2</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>3</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>65.0</td>
+      <td>7804</td>
+      <td>1</td>
+      <td>4</td>
+      <td>3</td>
+      <td>1928</td>
+      <td>1950</td>
+      <td>1981</td>
+      <td>2</td>
+      <td>4</td>
+      <td>...</td>
+      <td>2</td>
+      <td>12</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>60.0</td>
+      <td>8172</td>
+      <td>1</td>
+      <td>5</td>
+      <td>7</td>
+      <td>1955</td>
+      <td>1990</td>
+      <td>864</td>
+      <td>1</td>
+      <td>2</td>
+      <td>...</td>
+      <td>0</td>
+      <td>4</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>55.0</td>
+      <td>7642</td>
+      <td>1</td>
+      <td>7</td>
+      <td>8</td>
+      <td>1918</td>
+      <td>1998</td>
+      <td>1426</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>53.0</td>
+      <td>3684</td>
+      <td>1</td>
+      <td>7</td>
+      <td>5</td>
+      <td>2007</td>
+      <td>2007</td>
+      <td>1555</td>
+      <td>2</td>
+      <td>2</td>
+      <td>...</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 21 columns</p>
+</div>
+
+
+
+
+```python
+X_train.info()
+```
+
+    <class 'pandas.core.frame.DataFrame'>
+    Int64Index: 1095 entries, 1023 to 1126
+    Data columns (total 21 columns):
+     #   Column               Non-Null Count  Dtype  
+    ---  ------               --------------  -----  
+     0   LotFrontage          1095 non-null   float64
+     1   LotArea              1095 non-null   int64  
+     2   Street               1095 non-null   int64  
+     3   OverallQual          1095 non-null   int64  
+     4   OverallCond          1095 non-null   int64  
+     5   YearBuilt            1095 non-null   int64  
+     6   YearRemodAdd         1095 non-null   int64  
+     7   GrLivArea            1095 non-null   int64  
+     8   FullBath             1095 non-null   int64  
+     9   BedroomAbvGr         1095 non-null   int64  
+     10  TotRmsAbvGrd         1095 non-null   int64  
+     11  Fireplaces           1095 non-null   int64  
+     12  MoSold               1095 non-null   int64  
+     13  YrSold               1095 non-null   int64  
+     14  LotFrontage_Missing  1095 non-null   int64  
+     15  Ex                   1095 non-null   float64
+     16  Fa                   1095 non-null   float64
+     17  Gd                   1095 non-null   float64
+     18  N/A                  1095 non-null   float64
+     19  Po                   1095 non-null   float64
+     20  TA                   1095 non-null   float64
+    dtypes: float64(7), int64(14)
+    memory usage: 188.2 KB
+
+
+Ok, everything is numeric now! We have completed the minimum necessary preprocessing to use these features in a scikit-learn model!
+
+
+```python
+model.fit(X_train, y_train)
+```
+
+
+
+
+    ElasticNet(random_state=1)
+
+
+
+Great, no error this time.
+
+Let's use cross validation to take a look at the model's performance:
+
+
+```python
+from sklearn.model_selection import cross_val_score
+
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+
+
+
+    array([0.73895092, 0.66213118, 0.8124859 ])
+
+
+
+Not terrible, we are explaining between 66% and 81% of the variance in the target with our current feature set.
