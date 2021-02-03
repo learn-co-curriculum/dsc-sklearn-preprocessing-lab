@@ -227,7 +227,16 @@ FireplaceQu: Fireplace quality
 ...
 ```
 
-Eventually we will still need to perform some preprocessing to prepare the `FireplaceQu` column for modeling (because models require numeric inputs), but we don't need to worry about filling in missing values.
+So, let's replace those NaNs with the string "N/A" to indicate that this is a real category, not missing data:
+
+
+```python
+# Run this cell without changes
+X_train["FireplaceQu"] = X_train["FireplaceQu"].fillna("N/A")
+X_train["FireplaceQu"].value_counts()
+```
+
+Eventually we will still need to perform some preprocessing to prepare the `FireplaceQu` column for modeling (because models require numeric inputs rather than inputs of type `object`), but we don't need to worry about filling in missing values.
 
 ### Lot Frontage
 
@@ -383,6 +392,351 @@ X_train.isna().sum()
 ```
 
 Great! Now we have completed Step 2.
+
+## 3. Convert Categorical Features into Numbers
+
+Despite dropping irrelevant columns and filling in those NaN values, if we feed the current `X_train` into our scikit-learn `ElasticNet` model, it will crash:
+
+
+```python
+# Run this cell without changes
+model.fit(X_train, y_train)
+```
+
+Now the first column to cause a problem is `Street`, which is documented like this:
+
+```
+...
+Street: Type of road access to property
+
+       Grvl	Gravel	
+       Pave	Paved
+...
+```
+
+Let's look at the full `X_train`:
+
+
+```python
+# Run this cell without changes
+X_train.info()
+```
+
+So, our model is crashing because some of the columns are non-numeric.
+
+Anything that is already `float64` or `int64` will work with our model, but these features need to be converted:
+
+* `Street` (currently type `object`)
+* `FireplaceQu` (currently type `object`)
+* `LotFrontage_Missing` (currently type `bool`)
+
+There are two main approaches to converting these values, depending on whether there are 2 values (meaning the categorical variable can be converted into a single binary number) or more than 2 values (meaning we need to create extra columns to represent all categories). (If there is only 1 value, this is not a useful feature for the purposes of predictive analysis.)
+
+In the cell below, we inspect the value counts of the specified features:
+
+
+```python
+# Run this cell without changes
+
+print(X_train["Street"].value_counts())
+print()
+print(X_train["FireplaceQu"].value_counts())
+print()
+print(X_train["LotFrontage_Missing"].value_counts())
+```
+
+So, it looks like `Street` and `LotFrontage_Missing` have only 2 categories and can be converted into binary in place, whereas `FireplaceQu` has 6 categories and will need to be expanded into multiple columns.
+
+### Binary Categories
+
+For binary categories, we will use `LabelBinarizer` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelBinarizer.html)) to convert the categories of `Street` and `LotFrontage_Missing` into binary values (0s and 1s).
+
+Just like in Step 2 when we used the `MissingIndicator` and `SimpleImputer`, we will follow these steps:
+
+1. Identify data to be transformed
+2. Instantiate the transformer object
+3. Fit the transformer object (on training data only)
+4. Transform data using the transformer object
+5. Add the transformed data to the other data that was not transformed
+
+Let's start with transforming `Street`:
+
+
+```python
+# Replace None with appropriate code
+
+# (0) import LabelBinarizer from sklearn.preprocessing
+None
+
+# (1) Create a variable street_train that is the
+# relevant column from X_train
+street_train = None
+
+# (2) Instantiate a LabelBinarizer
+binarizer_street = None
+
+# (3) Fit the binarizer on street_train
+None
+
+# Inspect the classes of the fitted binarizer
+binarizer_street.classes_
+```
+
+The `.classes_` attribute of `LabelBinarizer` is only present once the `.fit` method has been called. (The trailing `_` indicates this convention.)
+
+What this tells us is that when `binarizer_street` is used to transform the street data into 1s and 0s, `0` will mean `'Grvl'` (gravel) in the original data, and `1` will mean `'Pave'` (paved) in the original data.
+
+The eventual scikit-learn model only cares about the 1s and 0s, but this information can be useful for us to understand what our code is doing and help us debug when things go wrong.
+
+Now let's transform `street_train` with the fitted binarizer:
+
+
+```python
+# Replace None with appropriate code
+
+# (4) Transform street_train using the binarizer and
+# assign the result to street_binarized_train
+street_binarized_train = None
+
+# Visually inspect street_binarized_train
+street_binarized_train
+```
+
+All of the values we see appear to be `1` right now, but that makes sense since there were only 4 properties with gravel (`0`) streets in `X_train`.
+
+Now let's replace the original `Street` column with the binarized version:
+
+
+```python
+# Replace None with appropriate code
+
+# (5) Replace value of Street
+X_train["Street"] = None
+
+# Visually inspect X_train
+X_train
+```
+
+
+```python
+# Run this cell without changes
+
+X_train.info()
+```
+
+Perfect! Now `Street` should by type `int64` instead of `object`.
+
+Now, repeat the same process with `LotFrontage_Missing`:
+
+
+```python
+# Replace None with appropriate code
+
+# (1) We already have a variable frontage_missing_train
+# from earlier, no additional step needed
+
+# (2) Instantiate a LabelBinarizer for missing frontage
+binarizer_frontage_missing = None
+
+# (3) Fit the binarizer on frontage_missing_train
+None
+
+# Inspect the classes of the fitted binarizer
+binarizer_frontage_missing.classes_
+```
+
+
+```python
+# Replace None with appropriate code
+
+# (4) Transform frontage_missing_train using the binarizer and
+# assign the result to frontage_missing_binarized_train
+frontage_missing_binarized_train = None
+
+# Visually inspect frontage_missing_binarized_train
+frontage_missing_binarized_train
+```
+
+
+```python
+# Replace None with appropriate code
+
+# (5) Replace value of LotFrontage_Missing
+X_train["LotFrontage_Missing"] = None
+
+# Visually inspect X_train
+X_train
+```
+
+
+```python
+# Run this cell without changes
+
+X_train.info()
+```
+
+Great, now we only have 1 column remaining that isn't type `float64` or `int64`!
+
+#### Note on Preprocessing Binary Values
+For binary values like `LotFrontage_Missing`, you might see a few different approaches to preprocessing. Python treats `True` and `1` as equal:
+
+
+```python
+# Run this cell without changes
+print(True == 1)
+print(False == 0)
+```
+
+This means that if your model is purely using Python, you actually might just be able to leave columns as type `bool` without any issues. You will likely see examples that do this. However if your model relies on C or Java "under the hood", this might cause problems.
+
+There is also a technique using `pandas` rather than scikit-learn for this particular conversion of boolean values to integers:
+
+
+```python
+# Run this cell without changes
+df_example = pd.DataFrame(frontage_missing_train, columns=["LotFrontage_Missing"])
+df_example
+```
+
+
+```python
+# Run this cell without changes
+df_example["LotFrontage_Missing"] = df_example["LotFrontage_Missing"].astype(int)
+df_example
+```
+
+This code is casting every value in the `LotFrontage_Missing` column to an integer, achieving the same result as the `LabelBinarizer` example with less code.
+
+The downside of using this approach is that it doesn't fit into a scikit-learn pipeline as neatly because it is using `pandas` to do the transformation instead of scikit-learn.
+
+In the future, you will need to make your own determination of which strategy to use!
+
+### Multiple Categories
+
+Unlike `Street` and `LotFrontage_Missing`, `FireplaceQu` has more than two categories. Therefore the process for encoding it numerically is a bit more complicated, because we will need to create multiple "dummy" columns that are each representing one category.
+
+To do this, we can use a `OneHotEncoder` from `sklearn.preprocessing` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OneHotEncoder.html)).
+
+The first several steps are very similar to all of the other transformers we've used so far, although the process of combining the data with the original data differs.
+
+In the cells below, complete steps `(0)`-`(4)` of preprocessing the `FireplaceQu` column using a `OneHotEncoder`:
+
+
+```python
+# Replace None with appropriate code
+
+# (0) import OneHotEncoder from sklearn.preprocessing
+None
+
+# (1) Create a variable fireplace_qu_train
+# extracted from X_train
+# (double brackets due to shape expected by OHE)
+fireplace_qu_train = X_train[["FireplaceQu"]]
+
+# (2) Instantiate a OneHotEncoder with categories="auto",
+# sparse=False, and handle_unknown="ignore"
+ohe = None
+
+# (3) Fit the encoder on fireplace_qu_train
+None
+
+# Inspect the categories of the fitted encoder
+ohe.categories_
+```
+
+
+```python
+# Replace None with appropriate code
+
+# (4) Transform fireplace_qu_train using the encoder and
+# assign the result to fireplace_qu_encoded_train
+fireplace_qu_encoded_train = None
+
+# Visually inspect fireplace_qu_encoded_train
+fireplace_qu_encoded_train
+```
+
+Notice that this time, unlike with `MissingIndicator`, `SimpleImputer`, or `LabelBinarizer`, we have created multiple columns of data out of a single column. The code below converts this unlabeled NumPy array into a readable pandas dataframe in preparation for merging it back with the rest of `X_train`:
+
+
+```python
+# Run this cell without changes
+
+# (5a) Make the transformed data into a dataframe
+fireplace_qu_encoded_train = pd.DataFrame(
+    # Pass in NumPy array
+    fireplace_qu_encoded_train,
+    # Set the column names to the categories found by OHE
+    columns=ohe.categories_[0],
+    # Set the index to match X_train's index
+    index=X_train.index
+)
+
+# Visually inspect new dataframe
+fireplace_qu_encoded_train
+```
+
+A couple notes on the code above:
+
+* The main goal of converting this into a dataframe (rather than converting `X_train` into a NumPy array, which would also allow them to be combined) is **readability** — to help you and others understand what your code is doing, and to help you debug. Eventually when you write this code as a pipeline, it will be NumPy arrays "under the hood".
+* We are using just the **raw categories** from `FireplaceQu` as our new dataframe columns, but you'll also see examples where a lambda function or list comprehension is used to create column names indicating the original column name, e.g. `FireplaceQu_Ex`, `FireplaceQu_Fa` rather than just `Ex`, `Fa`. This is a design decision based on readability — the scikit-learn model will work the same either way.
+* It is very important that **the index of the new dataframe matches the index of the main `X_train` dataframe**. Because we used `train_test_split`, the index of `X_train` is shuffled, so it goes `1023`, `810`, `1384` etc. instead of `0`, `1`, `2`, etc. If you don't specify an index for the new dataframe, it will assign the first record to the index `0` rather than `1023`. If you are ever merging encoded data like this and a bunch of NaNs start appearing, make sure that the indexes are lined up correctly! You also may see examples where the index of `X_train` has been reset, rather than specifying the index of the new dataframe — either way works.
+
+Next, we want to concatenate the new dataframe together with the original `X_train`:
+
+
+```python
+# Run this cell without changes
+
+# (5b) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
+
+# Visually inspect X_train
+X_train
+```
+
+Finally, we want to drop the original `FireplaceQu` column containing the categorical data:
+
+(For previous transformations we didn't need to drop anything because we were replacing 1 column with 1 new column in place, but one-hot encoding works differently.)
+
+
+```python
+# Run this cell without changes
+
+# (5c) Drop original FireplaceQu column
+X_train.drop("FireplaceQu", axis=1, inplace=True)
+
+# Visually inspect X_train
+X_train
+```
+
+
+```python
+# Run this cell without changes
+X_train.info()
+```
+
+Ok, everything is numeric now! We have completed the minimum necessary preprocessing to use these features in a scikit-learn model!
+
+
+```python
+# Run this cell without changes
+model.fit(X_train, y_train)
+```
+
+Great, no error this time.
+
+Let's use cross validation to take a look at the model's performance:
+
+
+```python
+# Run this cell without changes
+from sklearn.model_selection import cross_val_score
+
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+Not terrible, we are explaining between 66% and 81% of the variance in the target with our current feature set.
 
 
 ```python
