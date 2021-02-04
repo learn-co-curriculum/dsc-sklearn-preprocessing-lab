@@ -46,6 +46,10 @@ This step gets into the feature engineering part of preprocessing. Does our mode
 
 Because we are using a model with regularization, it's important to scale the data so that coefficients are not artificially penalized based on the units of the original feature. In this step you will use a `StandardScaler` to standardize the units of your data.
 
+#### 6. Preprocess Test Data
+
+Apply Steps 1-5 to the test data in order to perform a final model evaluation.
+
 #### BONUS: Refactor into a Pipeline
 
 In a professional data science setting, this work would be accomplished mainly within a scikit-learn pipeline, not by repeatedly creating pandas `DataFrame`s, transforming them, and concatenating them together. In this step you will optionally practice refactoring your existing code into a pipeline (or you can just look at the solution branch).
@@ -520,7 +524,6 @@ X_train
 
 ```python
 # Run this cell without changes
-
 X_train.info()
 ```
 
@@ -571,7 +574,6 @@ X_train
 
 ```python
 # Run this cell without changes
-
 X_train.info()
 ```
 
@@ -682,20 +684,7 @@ A couple notes on the code above:
 * We are using just the **raw categories** from `FireplaceQu` as our new dataframe columns, but you'll also see examples where a lambda function or list comprehension is used to create column names indicating the original column name, e.g. `FireplaceQu_Ex`, `FireplaceQu_Fa` rather than just `Ex`, `Fa`. This is a design decision based on readability — the scikit-learn model will work the same either way.
 * It is very important that **the index of the new dataframe matches the index of the main `X_train` dataframe**. Because we used `train_test_split`, the index of `X_train` is shuffled, so it goes `1023`, `810`, `1384` etc. instead of `0`, `1`, `2`, etc. If you don't specify an index for the new dataframe, it will assign the first record to the index `0` rather than `1023`. If you are ever merging encoded data like this and a bunch of NaNs start appearing, make sure that the indexes are lined up correctly! You also may see examples where the index of `X_train` has been reset, rather than specifying the index of the new dataframe — either way works.
 
-Next, we want to concatenate the new dataframe together with the original `X_train`:
-
-
-```python
-# Run this cell without changes
-
-# (5b) Concatenate the new dataframe with current X_train
-X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
-
-# Visually inspect X_train
-X_train
-```
-
-Finally, we want to drop the original `FireplaceQu` column containing the categorical data:
+Next, we want to drop the original `FireplaceQu` column containing the categorical data:
 
 (For previous transformations we didn't need to drop anything because we were replacing 1 column with 1 new column in place, but one-hot encoding works differently.)
 
@@ -703,8 +692,21 @@ Finally, we want to drop the original `FireplaceQu` column containing the catego
 ```python
 # Run this cell without changes
 
-# (5c) Drop original FireplaceQu column
+# (5b) Drop original FireplaceQu column
 X_train.drop("FireplaceQu", axis=1, inplace=True)
+
+# Visually inspect X_train
+X_train
+```
+
+Finally, we want to concatenate the new dataframe together with the original `X_train`:
+
+
+```python
+# Run this cell without changes
+
+# (5c) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
 
 # Visually inspect X_train
 X_train
@@ -737,6 +739,348 @@ cross_val_score(model, X_train, y_train, cv=3)
 ```
 
 Not terrible, we are explaining between 66% and 81% of the variance in the target with our current feature set.
+
+## 4. Add Interaction Terms
+
+Now that we have completed the minimum preprocessing to run a model without errors, let's try to improve the model performance.
+
+Linear models (including `ElasticNet`) are limited in the information they can learn because they are assuming a linear relationship between features and target. Often our real-world features aren't related to the target this way:
+
+
+```python
+# Run this cell without changes
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area")
+ax.set_ylabel("Sale Price")
+ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
+```
+
+
+```python
+# __SOlUTION__
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area")
+ax.set_ylabel("Sale Price")
+ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
+```
+
+
+![png](index_files/index_90_0.png)
+
+
+Sometimes we can improve the linearity by introducing an *interaction term*. In this case, multiplying the lot area by the overall quality:
+
+
+```python
+# Run this cell without changes
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"]*X_train["OverallQual"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area x Overall Quality")
+ax.set_ylabel("Sale Price")
+ax.set_title("(Lot Area x Overall Quality) vs. Sale Price for Ames Housing Data");
+```
+
+While we could manually add individual interaction terms, there is a preprocessor from scikit-learn called `PolynomialFeatures` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PolynomialFeatures.html)) that will generate all combinations of interaction terms (as well as polynomial terms, e.g. `Lot Area` squared) for a set of columns.
+
+Specifically, let's generate interaction terms for `LotFrontage`, `LotArea`, `OverallQual`, `YearBuilt`, and `GrLivArea`.
+
+To use `PolynomialFeatures`, we'll follow the same steps as `OneHotEncoder` (creating a new dataframe before merging), because it is another transformer that creates additional columns.
+
+
+```python
+# Replace None with appropriate code
+
+# (0) import PolynomialFeatures from sklearn.preprocessing
+None
+
+# (1) Create a variable poly_columns
+# extracted from X_train
+poly_column_names = [
+    "LotFrontage",
+    "LotArea",
+    "OverallQual",
+    "YearBuilt",
+    "GrLivArea"
+]
+poly_columns_train = X_train[poly_column_names]
+
+# (2) Instantiate a PolynomialFeatures transformer poly
+# with interaction_only=True and include_bias=False
+poly = None
+
+# (3) Fit the transformer on poly_columns_train
+None
+
+# Inspect the features created by the fitted transformer
+poly.get_feature_names(poly_column_names)
+```
+
+
+```python
+# Replace None with appropriate code
+
+# (4) Transform poly_columns using the transformer and
+# assign the result poly_columns_expanded_train
+poly_columns_expanded_train = None
+
+# Visually inspect poly_columns_expanded_train
+poly_columns_expanded_train
+```
+
+
+```python
+# Replace None with appropriate code
+
+# (5a) Make the transformed data into a dataframe
+poly_columns_expanded_train = pd.DataFrame(
+    # Pass in NumPy array created in previous step
+    None,
+    # Set the column names to the features created by poly
+    columns=poly.get_feature_names(poly_column_names),
+    # Set the index to match X_train's index
+    index=None
+)
+
+# Visually inspect new dataframe
+poly_columns_expanded_train
+```
+
+
+```python
+# Run this cell without changes
+
+# (5b) Drop original columns
+X_train.drop(poly_column_names, axis=1, inplace=True)
+
+# (5c) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, poly_columns_expanded_train], axis=1)
+
+# Visually inspect X_train
+X_train
+```
+
+
+```python
+# Run this cell without changes
+X_train.info()
+```
+
+Great, now we have 31 features instead of 21 features! Let's see how the model performs now:
+
+
+```python
+# Run this cell without changes
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+Hmm, got some metrics, so it didn't totally crash, but what is that warning message?
+
+A `ConvergenceWarning` means that the **gradient descent** algorithm within the `ElasticNet` model failed to find a minimum based on the specified parameters. While the warning message suggests modifyig the parameters (number of iterations), your first thought when you see a model fail to converge should be **do I need to scale the data**?
+
+Scaling data is especially important when there are substantial differences in the units of different features. Let's take a look at the values in our current `X_train`:
+
+
+```python
+# Run this cell without changes
+X_train.describe()
+```
+
+Looks like we have mean values ranging from about $0.6$ (for fireplaces) to $2.1 x 10^7$ (21 million, for `Lot Area x YearBuilt`). With the regularization applied by `ElasticNet`, the coefficients are being penalized very disproportionately!
+
+In the next step, we'll apply scaling to address this.
+
+## 5. Scale Data
+
+This is the final scikit-learn preprocessing task of the lab! The `StandardScaler` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)) standarizes features by removing the mean and scaling to unit variance. This will help our data to meet the assumptions of the L1 and L2 regularizers in our `ElasticNet` model.
+
+Unlike previous preprocessing steps, we are going to apply the `StandardScaler` to the entire `X_train`, not just a single column or a subset of columns.
+
+
+```python
+# Replace None with appropriate code
+
+# (0) import StandardScaler from sklearn.preprocessing
+None
+
+# (1) We don't actually have to select anything since 
+# we're using the full X_train
+
+# (2) Instantiate a StandardScaler
+scaler = None
+
+# (3) Fit the scaler on X_train
+None
+
+# (4) Transform X_train using the scaler and
+# assign the result to X_train_scaled
+X_train_scaled = None
+
+# Visually inspect X_train_scaled
+X_train_scaled
+```
+
+
+```python
+# Run this cell without changes
+
+# (5) Make the transformed data back into a dataframe
+X_train = pd.DataFrame(
+    # Pass in NumPy array
+    X_train_scaled,
+    # Set the column names to the original names
+    columns=X_train.columns,
+    # Set the index to match X_train's original index
+    index=X_train.index
+)
+
+# Visually inspect new dataframe
+X_train
+```
+
+
+```python
+# Run this cell without changes
+X_train.describe()
+```
+
+Great, now the means of the values are all much more centered. Let's see how the model performs now:
+
+
+```python
+# Run this cell without changes
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+Well, that was only a minor improvement over our first model. Seems like the interaction terms didn't provide that much information after all! There is plenty more feature engineering you could do if this were a real project, but we'll stop there.
+
+### Quick Scaling FAQs:
+
+1. **Do you only need to scale if you're using `PolynomialFeatures`?** No, we should have scaled regardless. `PolynomialFeatures` just exaggerated the difference in the units and caused the model to produce a warning, but it's a best practice to scale whenever your model has any distance-based metric. (In this case, the regularization within `ElasticNet` is distance-based.)
+2. **Do you really need to scale one-hot encoded features, if they are already just 0 or 1?** Professional opinions vary on this. Binary values already violate the assumptions of some models, so you might want to investigate empirically with your particular data and model whether you get better performance by scaling the one-hot encoded features or leaving them as just 0 and 1.
+
+## 6. Preprocess Test Data
+
+> Apply Steps 1-5 to the test data in order to perform a final model evaluation.
+
+This part is done for you, and it should work automatically, assuming you didn't change the names of any of the transformer objects. Note that we are intentionally **not instantiating or fitting the transformers** here, because you always want to fit transformers on the training data only.
+
+*Step 1: Drop Irrelevant Columns*
+
+
+```python
+# Run this cell without changes
+X_test = X_test.loc[:, relevant_columns]
+```
+
+*Step 2: Handle Missing Values*
+
+
+```python
+# Run this cell without changes
+
+# Replace FireplaceQu NaNs with "N/A"s
+X_test["FireplaceQu"] = X_test["FireplaceQu"].fillna("N/A")
+
+# Add missing indicator for lot frontage
+frontage_test = X_test[["LotFrontage"]]
+frontage_missing_test = missing_indicator.transform(frontage_test)
+X_test["LotFrontage_Missing"] = frontage_missing_test
+
+# Impute missing lot frontage values
+frontage_imputed_test = imputer.transform(frontage_test)
+X_test["LotFrontage"] = frontage_imputed_test
+
+# Check that there are no more missing values
+X_test.isna().sum()
+```
+
+*Step 3: Convert Categorical Features into Numbers*
+
+
+```python
+# Run this cell without changes
+
+# Binarize street type
+street_test = X_test["Street"]
+street_binarized_test = binarizer_street.transform(street_test)
+X_test["Street"] = street_binarized_test
+
+# Binarize frontage missing
+frontage_missing_test = X_test["LotFrontage_Missing"]
+frontage_missing_binarized_test = binarizer_frontage_missing.transform(frontage_missing_test)
+X_test["LotFrontage_Missing"] = frontage_missing_binarized_test
+
+# One-hot encode fireplace quality
+fireplace_qu_test = X_test[["FireplaceQu"]]
+fireplace_qu_encoded_test = ohe.transform(fireplace_qu_test)
+fireplace_qu_encoded_test = pd.DataFrame(
+    fireplace_qu_encoded_test,
+    columns=ohe.categories_[0],
+    index=X_test.index
+)
+X_test.drop("FireplaceQu", axis=1, inplace=True)
+X_test = pd.concat([X_test, fireplace_qu_encoded_test], axis=1)
+
+# Visually inspect X_test
+X_test
+```
+
+*Step 4: Add Interaction Terms*
+
+
+```python
+# Run this cell without changes
+
+# (1) select relevant data
+poly_columns_test = X_test[poly_column_names]
+
+# (4) transform using fitted transformer
+poly_columns_expanded_test = poly.transform(poly_columns_test) 
+
+# (5) add back to original dataset
+poly_columns_expanded_test = pd.DataFrame(
+    poly_columns_expanded_test,
+    columns=poly.get_feature_names(poly_column_names),
+    index=X_test.index
+)
+X_test.drop(poly_column_names, axis=1, inplace=True)
+X_test = pd.concat([X_test, poly_columns_expanded_test], axis=1)
+
+# Visually inspect X_test
+X_test
+```
+
+*Step 5: Scale Data*
+
+
+```python
+# Run this cell without changes
+X_test_scaled = scaler.transform(X_test)
+X_test = pd.DataFrame(
+    X_test_scaled,
+    columns=X_test.columns,
+    index=X_test.index
+)
+X_test
+```
+
+Fit the model on the full training set, evaluate on test set:
+
+
+```python
+# Run this cell without changes
+model.fit(X_train, y_train)
+model.score(X_test, y_test)
+```
+
+Great, that worked! Now we have completed the full process of preprocessing the Ames Housing data in preparation for machine learning!
 
 
 ```python
