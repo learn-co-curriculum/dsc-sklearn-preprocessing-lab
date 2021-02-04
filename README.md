@@ -46,6 +46,10 @@ This step gets into the feature engineering part of preprocessing. Does our mode
 
 Because we are using a model with regularization, it's important to scale the data so that coefficients are not artificially penalized based on the units of the original feature. In this step you will use a `StandardScaler` to standardize the units of your data.
 
+#### 6. Preprocess Test Data
+
+Apply Steps 1-5 to the test data in order to perform a final model evaluation.
+
 #### BONUS: Refactor into a Pipeline
 
 In a professional data science setting, this work would be accomplished mainly within a scikit-learn pipeline, not by repeatedly creating pandas `DataFrame`s, transforming them, and concatenating them together. In this step you will optionally practice refactoring your existing code into a pipeline (or you can just look at the solution branch).
@@ -3205,14 +3209,12 @@ X_train
 
 ```python
 # Run this cell without changes
-
 X_train.info()
 ```
 
 
 ```python
 # __SOLUTION__
-
 X_train.info()
 ```
 
@@ -3604,14 +3606,12 @@ X_train
 
 ```python
 # Run this cell without changes
-
 X_train.info()
 ```
 
 
 ```python
 # __SOLUTION__
-
 X_train.info()
 ```
 
@@ -4133,14 +4133,16 @@ A couple notes on the code above:
 * We are using just the **raw categories** from `FireplaceQu` as our new dataframe columns, but you'll also see examples where a lambda function or list comprehension is used to create column names indicating the original column name, e.g. `FireplaceQu_Ex`, `FireplaceQu_Fa` rather than just `Ex`, `Fa`. This is a design decision based on readability — the scikit-learn model will work the same either way.
 * It is very important that **the index of the new dataframe matches the index of the main `X_train` dataframe**. Because we used `train_test_split`, the index of `X_train` is shuffled, so it goes `1023`, `810`, `1384` etc. instead of `0`, `1`, `2`, etc. If you don't specify an index for the new dataframe, it will assign the first record to the index `0` rather than `1023`. If you are ever merging encoded data like this and a bunch of NaNs start appearing, make sure that the indexes are lined up correctly! You also may see examples where the index of `X_train` has been reset, rather than specifying the index of the new dataframe — either way works.
 
-Next, we want to concatenate the new dataframe together with the original `X_train`:
+Next, we want to drop the original `FireplaceQu` column containing the categorical data:
+
+(For previous transformations we didn't need to drop anything because we were replacing 1 column with 1 new column in place, but one-hot encoding works differently.)
 
 
 ```python
 # Run this cell without changes
 
-# (5b) Concatenate the new dataframe with current X_train
-X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
+# (5b) Drop original FireplaceQu column
+X_train.drop("FireplaceQu", axis=1, inplace=True)
 
 # Visually inspect X_train
 X_train
@@ -4150,8 +4152,8 @@ X_train
 ```python
 # __SOLUTION__
 
-# (5b) Concatenate the new dataframe with current X_train
-X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
+# (5b) Drop original FireplaceQu column
+X_train.drop("FireplaceQu", axis=1, inplace=True)
 
 # Visually inspect X_train
 X_train
@@ -4188,17 +4190,11 @@ X_train
       <th>GrLivArea</th>
       <th>FullBath</th>
       <th>BedroomAbvGr</th>
-      <th>...</th>
-      <th>FireplaceQu</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
       <th>MoSold</th>
       <th>YrSold</th>
       <th>LotFrontage_Missing</th>
-      <th>Ex</th>
-      <th>Fa</th>
-      <th>Gd</th>
-      <th>N/A</th>
-      <th>Po</th>
-      <th>TA</th>
     </tr>
   </thead>
   <tbody>
@@ -4214,17 +4210,11 @@ X_train
       <td>1504</td>
       <td>2</td>
       <td>2</td>
-      <td>...</td>
-      <td>Gd</td>
+      <td>7</td>
+      <td>1</td>
       <td>5</td>
       <td>2008</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>810</th>
@@ -4238,17 +4228,11 @@ X_train
       <td>1309</td>
       <td>1</td>
       <td>3</td>
-      <td>...</td>
-      <td>Fa</td>
+      <td>5</td>
+      <td>1</td>
       <td>1</td>
       <td>2006</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>1384</th>
@@ -4262,17 +4246,11 @@ X_train
       <td>1258</td>
       <td>1</td>
       <td>2</td>
-      <td>...</td>
-      <td>N/A</td>
+      <td>6</td>
+      <td>0</td>
       <td>10</td>
       <td>2009</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>626</th>
@@ -4286,17 +4264,11 @@ X_train
       <td>1422</td>
       <td>1</td>
       <td>3</td>
-      <td>...</td>
-      <td>TA</td>
+      <td>6</td>
+      <td>1</td>
       <td>8</td>
       <td>2007</td>
       <td>1</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
     </tr>
     <tr>
       <th>813</th>
@@ -4310,26 +4282,14 @@ X_train
       <td>1442</td>
       <td>1</td>
       <td>4</td>
-      <td>...</td>
-      <td>N/A</td>
+      <td>7</td>
+      <td>0</td>
       <td>4</td>
       <td>2007</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>...</th>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
-      <td>...</td>
       <td>...</td>
       <td>...</td>
       <td>...</td>
@@ -4358,17 +4318,11 @@ X_train
       <td>1314</td>
       <td>2</td>
       <td>3</td>
-      <td>...</td>
-      <td>Gd</td>
+      <td>6</td>
+      <td>1</td>
       <td>3</td>
       <td>2007</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>1130</th>
@@ -4382,17 +4336,11 @@ X_train
       <td>1981</td>
       <td>2</td>
       <td>4</td>
-      <td>...</td>
-      <td>TA</td>
+      <td>7</td>
+      <td>2</td>
       <td>12</td>
       <td>2009</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
     </tr>
     <tr>
       <th>1294</th>
@@ -4406,17 +4354,11 @@ X_train
       <td>864</td>
       <td>1</td>
       <td>2</td>
-      <td>...</td>
-      <td>N/A</td>
+      <td>5</td>
+      <td>0</td>
       <td>4</td>
       <td>2006</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>860</th>
@@ -4430,17 +4372,11 @@ X_train
       <td>1426</td>
       <td>1</td>
       <td>3</td>
-      <td>...</td>
-      <td>Gd</td>
+      <td>7</td>
+      <td>1</td>
       <td>6</td>
       <td>2007</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
     </tr>
     <tr>
       <th>1126</th>
@@ -4454,35 +4390,27 @@ X_train
       <td>1555</td>
       <td>2</td>
       <td>2</td>
-      <td>...</td>
-      <td>TA</td>
+      <td>7</td>
+      <td>1</td>
       <td>6</td>
       <td>2009</td>
       <td>0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>0.0</td>
-      <td>1.0</td>
     </tr>
   </tbody>
 </table>
-<p>1095 rows × 22 columns</p>
+<p>1095 rows × 15 columns</p>
 </div>
 
 
 
-Finally, we want to drop the original `FireplaceQu` column containing the categorical data:
-
-(For previous transformations we didn't need to drop anything because we were replacing 1 column with 1 new column in place, but one-hot encoding works differently.)
+Finally, we want to concatenate the new dataframe together with the original `X_train`:
 
 
 ```python
 # Run this cell without changes
 
-# (5c) Drop original FireplaceQu column
-X_train.drop("FireplaceQu", axis=1, inplace=True)
+# (5c) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
 
 # Visually inspect X_train
 X_train
@@ -4492,8 +4420,8 @@ X_train
 ```python
 # __SOLUTION__
 
-# (5c) Drop original FireplaceQu column
-X_train.drop("FireplaceQu", axis=1, inplace=True)
+# (5c) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, fireplace_qu_encoded_train], axis=1)
 
 # Visually inspect X_train
 X_train
@@ -4906,6 +4834,3068 @@ cross_val_score(model, X_train, y_train, cv=3)
 
 
 Not terrible, we are explaining between 66% and 81% of the variance in the target with our current feature set.
+
+## 4. Add Interaction Terms
+
+Now that we have completed the minimum preprocessing to run a model without errors, let's try to improve the model performance.
+
+Linear models (including `ElasticNet`) are limited in the information they can learn because they are assuming a linear relationship between features and target. Often our real-world features aren't related to the target this way:
+
+
+```python
+# Run this cell without changes
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area")
+ax.set_ylabel("Sale Price")
+ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
+```
+
+
+```python
+# __SOlUTION__
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area")
+ax.set_ylabel("Sale Price")
+ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
+```
+
+
+![png](index_files/index_133_0.png)
+
+
+Sometimes we can improve the linearity by introducing an *interaction term*. In this case, multiplying the lot area by the overall quality:
+
+
+```python
+# Run this cell without changes
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"]*X_train["OverallQual"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area x Overall Quality")
+ax.set_ylabel("Sale Price")
+ax.set_title("(Lot Area x Overall Quality) vs. Sale Price for Ames Housing Data");
+```
+
+
+```python
+# __SOLUTION__
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"]*X_train["OverallQual"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area x Overall Quality")
+ax.set_ylabel("Sale Price")
+ax.set_title("(Lot Area x Overall Quality) vs. Sale Price for Ames Housing Data");
+```
+
+
+![png](index_files/index_136_0.png)
+
+
+While we could manually add individual interaction terms, there is a preprocessor from scikit-learn called `PolynomialFeatures` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PolynomialFeatures.html)) that will generate all combinations of interaction terms (as well as polynomial terms, e.g. `Lot Area` squared) for a set of columns.
+
+Specifically, let's generate interaction terms for `LotFrontage`, `LotArea`, `OverallQual`, `YearBuilt`, and `GrLivArea`.
+
+To use `PolynomialFeatures`, we'll follow the same steps as `OneHotEncoder` (creating a new dataframe before merging), because it is another transformer that creates additional columns.
+
+
+```python
+# Replace None with appropriate code
+
+# (0) import PolynomialFeatures from sklearn.preprocessing
+None
+
+# (1) Create a variable poly_columns
+# extracted from X_train
+poly_column_names = [
+    "LotFrontage",
+    "LotArea",
+    "OverallQual",
+    "YearBuilt",
+    "GrLivArea"
+]
+poly_columns_train = X_train[poly_column_names]
+
+# (2) Instantiate a PolynomialFeatures transformer poly
+# with interaction_only=True and include_bias=False
+poly = None
+
+# (3) Fit the transformer on poly_columns_train
+None
+
+# Inspect the features created by the fitted transformer
+poly.get_feature_names(poly_column_names)
+```
+
+
+```python
+# __SOLUTION__
+
+# (0) import PolynomialFeatures from sklearn.preprocessing
+from sklearn.preprocessing import PolynomialFeatures
+
+# (1) Create a variable poly_columns
+# extracted from X_train
+poly_column_names = [
+    "LotFrontage",
+    "LotArea",
+    "OverallQual",
+    "YearBuilt",
+    "GrLivArea"
+]
+poly_columns_train = X_train[poly_column_names]
+
+# (2) Instantiate a PolynomialFeatures transformer
+# with interaction_only=True and include_bias=False
+poly = PolynomialFeatures(interaction_only=True, include_bias=False)
+
+# (3) Fit the transformer on poly_columns
+poly.fit(poly_columns_train)
+
+# Inspect the features created by the fitted transformer
+poly.get_feature_names(poly_column_names)
+```
+
+
+
+
+    ['LotFrontage',
+     'LotArea',
+     'OverallQual',
+     'YearBuilt',
+     'GrLivArea',
+     'LotFrontage LotArea',
+     'LotFrontage OverallQual',
+     'LotFrontage YearBuilt',
+     'LotFrontage GrLivArea',
+     'LotArea OverallQual',
+     'LotArea YearBuilt',
+     'LotArea GrLivArea',
+     'OverallQual YearBuilt',
+     'OverallQual GrLivArea',
+     'YearBuilt GrLivArea']
+
+
+
+
+```python
+# Replace None with appropriate code
+
+# (4) Transform poly_columns using the transformer and
+# assign the result poly_columns_expanded_train
+poly_columns_expanded_train = None
+
+# Visually inspect poly_columns_expanded_train
+poly_columns_expanded_train
+```
+
+
+```python
+# __SOLUTION__
+
+# (4) Transform poly_columns using the transformer and
+# assign the result poly_columns_expanded_train
+poly_columns_expanded_train = poly.transform(poly_columns_train)
+
+# Visually inspect poly_columns_expanded_train
+poly_columns_expanded_train
+```
+
+
+
+
+    array([[4.300000e+01, 3.182000e+03, 7.000000e+00, ..., 1.403500e+04,
+            1.052800e+04, 3.015520e+06],
+           [7.800000e+01, 1.014000e+04, 6.000000e+00, ..., 1.184400e+04,
+            7.854000e+03, 2.583966e+06],
+           [6.000000e+01, 9.060000e+03, 6.000000e+00, ..., 1.163400e+04,
+            7.548000e+03, 2.439262e+06],
+           ...,
+           [6.000000e+01, 8.172000e+03, 5.000000e+00, ..., 9.775000e+03,
+            4.320000e+03, 1.689120e+06],
+           [5.500000e+01, 7.642000e+03, 7.000000e+00, ..., 1.342600e+04,
+            9.982000e+03, 2.735068e+06],
+           [5.300000e+01, 3.684000e+03, 7.000000e+00, ..., 1.404900e+04,
+            1.088500e+04, 3.120885e+06]])
+
+
+
+
+```python
+# Replace None with appropriate code
+
+# (5a) Make the transformed data into a dataframe
+poly_columns_expanded_train = pd.DataFrame(
+    # Pass in NumPy array created in previous step
+    None,
+    # Set the column names to the features created by poly
+    columns=poly.get_feature_names(poly_column_names),
+    # Set the index to match X_train's index
+    index=None
+)
+
+# Visually inspect new dataframe
+poly_columns_expanded_train
+```
+
+
+```python
+# __SOLUTION__
+
+# (5a) Make the transformed data into a dataframe
+poly_columns_expanded_train = pd.DataFrame(
+    # Pass in NumPy array created in previous step
+    poly_columns_expanded_train,
+    # Set the column names to the features created by poly
+    columns=poly.get_feature_names(poly_column_names),
+    # Set the index to match X_train's index
+    index=X_train.index
+)
+
+# Visually inspect new dataframe
+poly_columns_expanded_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage</th>
+      <th>LotArea</th>
+      <th>OverallQual</th>
+      <th>YearBuilt</th>
+      <th>GrLivArea</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>43.0</td>
+      <td>3182.0</td>
+      <td>7.0</td>
+      <td>2005.0</td>
+      <td>1504.0</td>
+      <td>136826.0</td>
+      <td>301.0</td>
+      <td>86215.0</td>
+      <td>64672.0</td>
+      <td>22274.0</td>
+      <td>6379910.0</td>
+      <td>4785728.0</td>
+      <td>14035.0</td>
+      <td>10528.0</td>
+      <td>3015520.0</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>78.0</td>
+      <td>10140.0</td>
+      <td>6.0</td>
+      <td>1974.0</td>
+      <td>1309.0</td>
+      <td>790920.0</td>
+      <td>468.0</td>
+      <td>153972.0</td>
+      <td>102102.0</td>
+      <td>60840.0</td>
+      <td>20016360.0</td>
+      <td>13273260.0</td>
+      <td>11844.0</td>
+      <td>7854.0</td>
+      <td>2583966.0</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>60.0</td>
+      <td>9060.0</td>
+      <td>6.0</td>
+      <td>1939.0</td>
+      <td>1258.0</td>
+      <td>543600.0</td>
+      <td>360.0</td>
+      <td>116340.0</td>
+      <td>75480.0</td>
+      <td>54360.0</td>
+      <td>17567340.0</td>
+      <td>11397480.0</td>
+      <td>11634.0</td>
+      <td>7548.0</td>
+      <td>2439262.0</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>70.0</td>
+      <td>12342.0</td>
+      <td>5.0</td>
+      <td>1960.0</td>
+      <td>1422.0</td>
+      <td>863940.0</td>
+      <td>350.0</td>
+      <td>137200.0</td>
+      <td>99540.0</td>
+      <td>61710.0</td>
+      <td>24190320.0</td>
+      <td>17550324.0</td>
+      <td>9800.0</td>
+      <td>7110.0</td>
+      <td>2787120.0</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>75.0</td>
+      <td>9750.0</td>
+      <td>6.0</td>
+      <td>1958.0</td>
+      <td>1442.0</td>
+      <td>731250.0</td>
+      <td>450.0</td>
+      <td>146850.0</td>
+      <td>108150.0</td>
+      <td>58500.0</td>
+      <td>19090500.0</td>
+      <td>14059500.0</td>
+      <td>11748.0</td>
+      <td>8652.0</td>
+      <td>2823436.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>78.0</td>
+      <td>9317.0</td>
+      <td>6.0</td>
+      <td>2006.0</td>
+      <td>1314.0</td>
+      <td>726726.0</td>
+      <td>468.0</td>
+      <td>156468.0</td>
+      <td>102492.0</td>
+      <td>55902.0</td>
+      <td>18689902.0</td>
+      <td>12242538.0</td>
+      <td>12036.0</td>
+      <td>7884.0</td>
+      <td>2635884.0</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>65.0</td>
+      <td>7804.0</td>
+      <td>4.0</td>
+      <td>1928.0</td>
+      <td>1981.0</td>
+      <td>507260.0</td>
+      <td>260.0</td>
+      <td>125320.0</td>
+      <td>128765.0</td>
+      <td>31216.0</td>
+      <td>15046112.0</td>
+      <td>15459724.0</td>
+      <td>7712.0</td>
+      <td>7924.0</td>
+      <td>3819368.0</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>60.0</td>
+      <td>8172.0</td>
+      <td>5.0</td>
+      <td>1955.0</td>
+      <td>864.0</td>
+      <td>490320.0</td>
+      <td>300.0</td>
+      <td>117300.0</td>
+      <td>51840.0</td>
+      <td>40860.0</td>
+      <td>15976260.0</td>
+      <td>7060608.0</td>
+      <td>9775.0</td>
+      <td>4320.0</td>
+      <td>1689120.0</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>55.0</td>
+      <td>7642.0</td>
+      <td>7.0</td>
+      <td>1918.0</td>
+      <td>1426.0</td>
+      <td>420310.0</td>
+      <td>385.0</td>
+      <td>105490.0</td>
+      <td>78430.0</td>
+      <td>53494.0</td>
+      <td>14657356.0</td>
+      <td>10897492.0</td>
+      <td>13426.0</td>
+      <td>9982.0</td>
+      <td>2735068.0</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>53.0</td>
+      <td>3684.0</td>
+      <td>7.0</td>
+      <td>2007.0</td>
+      <td>1555.0</td>
+      <td>195252.0</td>
+      <td>371.0</td>
+      <td>106371.0</td>
+      <td>82415.0</td>
+      <td>25788.0</td>
+      <td>7393788.0</td>
+      <td>5728620.0</td>
+      <td>14049.0</td>
+      <td>10885.0</td>
+      <td>3120885.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 15 columns</p>
+</div>
+
+
+
+
+```python
+# Run this cell without changes
+
+# (5b) Drop original columns
+X_train.drop(poly_column_names, axis=1, inplace=True)
+
+# (5c) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, poly_columns_expanded_train], axis=1)
+
+# Visually inspect X_train
+X_train
+```
+
+
+```python
+# __SOLUTION__
+
+# (5b) Drop original columns
+X_train.drop(poly_column_names, axis=1, inplace=True)
+
+# (5c) Concatenate the new dataframe with current X_train
+X_train = pd.concat([X_train, poly_columns_expanded_train], axis=1)
+
+# Visually inspect X_train
+X_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Street</th>
+      <th>OverallCond</th>
+      <th>YearRemodAdd</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>...</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>1</td>
+      <td>5</td>
+      <td>2006</td>
+      <td>2</td>
+      <td>2</td>
+      <td>7</td>
+      <td>1</td>
+      <td>5</td>
+      <td>2008</td>
+      <td>0</td>
+      <td>...</td>
+      <td>136826.0</td>
+      <td>301.0</td>
+      <td>86215.0</td>
+      <td>64672.0</td>
+      <td>22274.0</td>
+      <td>6379910.0</td>
+      <td>4785728.0</td>
+      <td>14035.0</td>
+      <td>10528.0</td>
+      <td>3015520.0</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1999</td>
+      <td>1</td>
+      <td>3</td>
+      <td>5</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>...</td>
+      <td>790920.0</td>
+      <td>468.0</td>
+      <td>153972.0</td>
+      <td>102102.0</td>
+      <td>60840.0</td>
+      <td>20016360.0</td>
+      <td>13273260.0</td>
+      <td>11844.0</td>
+      <td>7854.0</td>
+      <td>2583966.0</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>1</td>
+      <td>5</td>
+      <td>1950</td>
+      <td>1</td>
+      <td>2</td>
+      <td>6</td>
+      <td>0</td>
+      <td>10</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>...</td>
+      <td>543600.0</td>
+      <td>360.0</td>
+      <td>116340.0</td>
+      <td>75480.0</td>
+      <td>54360.0</td>
+      <td>17567340.0</td>
+      <td>11397480.0</td>
+      <td>11634.0</td>
+      <td>7548.0</td>
+      <td>2439262.0</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>1</td>
+      <td>5</td>
+      <td>1978</td>
+      <td>1</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>...</td>
+      <td>863940.0</td>
+      <td>350.0</td>
+      <td>137200.0</td>
+      <td>99540.0</td>
+      <td>61710.0</td>
+      <td>24190320.0</td>
+      <td>17550324.0</td>
+      <td>9800.0</td>
+      <td>7110.0</td>
+      <td>2787120.0</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1958</td>
+      <td>1</td>
+      <td>4</td>
+      <td>7</td>
+      <td>0</td>
+      <td>4</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>...</td>
+      <td>731250.0</td>
+      <td>450.0</td>
+      <td>146850.0</td>
+      <td>108150.0</td>
+      <td>58500.0</td>
+      <td>19090500.0</td>
+      <td>14059500.0</td>
+      <td>11748.0</td>
+      <td>8652.0</td>
+      <td>2823436.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>1</td>
+      <td>5</td>
+      <td>2006</td>
+      <td>2</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>3</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>...</td>
+      <td>726726.0</td>
+      <td>468.0</td>
+      <td>156468.0</td>
+      <td>102492.0</td>
+      <td>55902.0</td>
+      <td>18689902.0</td>
+      <td>12242538.0</td>
+      <td>12036.0</td>
+      <td>7884.0</td>
+      <td>2635884.0</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>1</td>
+      <td>3</td>
+      <td>1950</td>
+      <td>2</td>
+      <td>4</td>
+      <td>7</td>
+      <td>2</td>
+      <td>12</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>...</td>
+      <td>507260.0</td>
+      <td>260.0</td>
+      <td>125320.0</td>
+      <td>128765.0</td>
+      <td>31216.0</td>
+      <td>15046112.0</td>
+      <td>15459724.0</td>
+      <td>7712.0</td>
+      <td>7924.0</td>
+      <td>3819368.0</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>1</td>
+      <td>7</td>
+      <td>1990</td>
+      <td>1</td>
+      <td>2</td>
+      <td>5</td>
+      <td>0</td>
+      <td>4</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>...</td>
+      <td>490320.0</td>
+      <td>300.0</td>
+      <td>117300.0</td>
+      <td>51840.0</td>
+      <td>40860.0</td>
+      <td>15976260.0</td>
+      <td>7060608.0</td>
+      <td>9775.0</td>
+      <td>4320.0</td>
+      <td>1689120.0</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>1</td>
+      <td>8</td>
+      <td>1998</td>
+      <td>1</td>
+      <td>3</td>
+      <td>7</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>0</td>
+      <td>...</td>
+      <td>420310.0</td>
+      <td>385.0</td>
+      <td>105490.0</td>
+      <td>78430.0</td>
+      <td>53494.0</td>
+      <td>14657356.0</td>
+      <td>10897492.0</td>
+      <td>13426.0</td>
+      <td>9982.0</td>
+      <td>2735068.0</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>1</td>
+      <td>5</td>
+      <td>2007</td>
+      <td>2</td>
+      <td>2</td>
+      <td>7</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>...</td>
+      <td>195252.0</td>
+      <td>371.0</td>
+      <td>106371.0</td>
+      <td>82415.0</td>
+      <td>25788.0</td>
+      <td>7393788.0</td>
+      <td>5728620.0</td>
+      <td>14049.0</td>
+      <td>10885.0</td>
+      <td>3120885.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 31 columns</p>
+</div>
+
+
+
+
+```python
+# Run this cell without changes
+X_train.info()
+```
+
+
+```python
+# __SOLUTION__
+X_train.info()
+```
+
+    <class 'pandas.core.frame.DataFrame'>
+    Int64Index: 1095 entries, 1023 to 1126
+    Data columns (total 31 columns):
+     #   Column                   Non-Null Count  Dtype  
+    ---  ------                   --------------  -----  
+     0   Street                   1095 non-null   int64  
+     1   OverallCond              1095 non-null   int64  
+     2   YearRemodAdd             1095 non-null   int64  
+     3   FullBath                 1095 non-null   int64  
+     4   BedroomAbvGr             1095 non-null   int64  
+     5   TotRmsAbvGrd             1095 non-null   int64  
+     6   Fireplaces               1095 non-null   int64  
+     7   MoSold                   1095 non-null   int64  
+     8   YrSold                   1095 non-null   int64  
+     9   LotFrontage_Missing      1095 non-null   int64  
+     10  Ex                       1095 non-null   float64
+     11  Fa                       1095 non-null   float64
+     12  Gd                       1095 non-null   float64
+     13  N/A                      1095 non-null   float64
+     14  Po                       1095 non-null   float64
+     15  TA                       1095 non-null   float64
+     16  LotFrontage              1095 non-null   float64
+     17  LotArea                  1095 non-null   float64
+     18  OverallQual              1095 non-null   float64
+     19  YearBuilt                1095 non-null   float64
+     20  GrLivArea                1095 non-null   float64
+     21  LotFrontage LotArea      1095 non-null   float64
+     22  LotFrontage OverallQual  1095 non-null   float64
+     23  LotFrontage YearBuilt    1095 non-null   float64
+     24  LotFrontage GrLivArea    1095 non-null   float64
+     25  LotArea OverallQual      1095 non-null   float64
+     26  LotArea YearBuilt        1095 non-null   float64
+     27  LotArea GrLivArea        1095 non-null   float64
+     28  OverallQual YearBuilt    1095 non-null   float64
+     29  OverallQual GrLivArea    1095 non-null   float64
+     30  YearBuilt GrLivArea      1095 non-null   float64
+    dtypes: float64(21), int64(10)
+    memory usage: 273.8 KB
+
+
+Great, now we have 31 features instead of 21 features! Let's see how the model performs now:
+
+
+```python
+# Run this cell without changes
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+
+```python
+# __SOLUTION__
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/linear_model/_coordinate_descent.py:529: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 298739023179.6966, tolerance: 422550782.65263027
+      model = cd_fast.enet_coordinate_descent(
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/linear_model/_coordinate_descent.py:529: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 357401730994.73425, tolerance: 434287718.1245009
+      model = cd_fast.enet_coordinate_descent(
+    //anaconda3/envs/learn-env/lib/python3.8/site-packages/sklearn/linear_model/_coordinate_descent.py:529: ConvergenceWarning: Objective did not converge. You might want to increase the number of iterations. Duality gap: 402015942401.8634, tolerance: 471766118.83873975
+      model = cd_fast.enet_coordinate_descent(
+
+
+
+
+
+    array([0.75336526, 0.79206309, 0.75227628])
+
+
+
+Hmm, got some metrics, so it didn't totally crash, but what is that warning message?
+
+A `ConvergenceWarning` means that the **gradient descent** algorithm within the `ElasticNet` model failed to find a minimum based on the specified parameters. While the warning message suggests modifyig the parameters (number of iterations), your first thought when you see a model fail to converge should be **do I need to scale the data**?
+
+Scaling data is especially important when there are substantial differences in the units of different features. Let's take a look at the values in our current `X_train`:
+
+
+```python
+# Run this cell without changes
+X_train.describe()
+```
+
+
+```python
+# __SOLUTION__
+X_train.describe()
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Street</th>
+      <th>OverallCond</th>
+      <th>YearRemodAdd</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>...</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>1095.000000</td>
+      <td>1095.00000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>...</td>
+      <td>1.095000e+03</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1095.000000</td>
+      <td>1095.000000</td>
+      <td>1.095000e+03</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>0.996347</td>
+      <td>5.56895</td>
+      <td>1984.854795</td>
+      <td>1.578995</td>
+      <td>2.896804</td>
+      <td>6.564384</td>
+      <td>0.619178</td>
+      <td>6.361644</td>
+      <td>2007.818265</td>
+      <td>0.182648</td>
+      <td>...</td>
+      <td>8.308276e+05</td>
+      <td>438.181735</td>
+      <td>138690.935160</td>
+      <td>1.119997e+05</td>
+      <td>6.737676e+04</td>
+      <td>2.118694e+07</td>
+      <td>1.800923e+07</td>
+      <td>12105.757078</td>
+      <td>9805.720548</td>
+      <td>3.020889e+06</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>0.060357</td>
+      <td>1.10448</td>
+      <td>20.732472</td>
+      <td>0.544976</td>
+      <td>0.806361</td>
+      <td>1.625103</td>
+      <td>0.644338</td>
+      <td>2.680894</td>
+      <td>1.325752</td>
+      <td>0.386555</td>
+      <td>...</td>
+      <td>1.350715e+06</td>
+      <td>207.779337</td>
+      <td>45385.148925</td>
+      <td>7.993630e+04</td>
+      <td>7.490171e+04</td>
+      <td>2.176917e+07</td>
+      <td>2.596924e+07</td>
+      <td>2806.986068</td>
+      <td>5199.725503</td>
+      <td>1.047711e+06</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>0.000000</td>
+      <td>1.00000</td>
+      <td>1950.000000</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>2.000000</td>
+      <td>0.000000</td>
+      <td>1.000000</td>
+      <td>2006.000000</td>
+      <td>0.000000</td>
+      <td>...</td>
+      <td>3.101700e+04</td>
+      <td>50.000000</td>
+      <td>41370.000000</td>
+      <td>1.323000e+04</td>
+      <td>5.000000e+03</td>
+      <td>2.574000e+06</td>
+      <td>9.305100e+05</td>
+      <td>1922.000000</td>
+      <td>334.000000</td>
+      <td>6.499640e+05</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>1.000000</td>
+      <td>5.00000</td>
+      <td>1966.000000</td>
+      <td>1.000000</td>
+      <td>2.000000</td>
+      <td>5.000000</td>
+      <td>0.000000</td>
+      <td>5.000000</td>
+      <td>2007.000000</td>
+      <td>0.000000</td>
+      <td>...</td>
+      <td>4.756920e+05</td>
+      <td>312.000000</td>
+      <td>116400.000000</td>
+      <td>7.078750e+04</td>
+      <td>4.034000e+04</td>
+      <td>1.494741e+07</td>
+      <td>8.749200e+06</td>
+      <td>9810.000000</td>
+      <td>5945.000000</td>
+      <td>2.259095e+06</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>1.000000</td>
+      <td>5.00000</td>
+      <td>1994.000000</td>
+      <td>2.000000</td>
+      <td>3.000000</td>
+      <td>6.000000</td>
+      <td>1.000000</td>
+      <td>6.000000</td>
+      <td>2008.000000</td>
+      <td>0.000000</td>
+      <td>...</td>
+      <td>6.653500e+05</td>
+      <td>420.000000</td>
+      <td>137760.000000</td>
+      <td>1.001600e+05</td>
+      <td>5.670500e+04</td>
+      <td>1.877812e+07</td>
+      <td>1.368276e+07</td>
+      <td>11832.000000</td>
+      <td>8892.000000</td>
+      <td>2.918504e+06</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>1.000000</td>
+      <td>6.00000</td>
+      <td>2004.000000</td>
+      <td>2.000000</td>
+      <td>3.000000</td>
+      <td>7.000000</td>
+      <td>1.000000</td>
+      <td>8.000000</td>
+      <td>2009.000000</td>
+      <td>0.000000</td>
+      <td>...</td>
+      <td>9.050150e+05</td>
+      <td>510.000000</td>
+      <td>156000.000000</td>
+      <td>1.360195e+05</td>
+      <td>7.761550e+04</td>
+      <td>2.302560e+07</td>
+      <td>2.041942e+07</td>
+      <td>14021.000000</td>
+      <td>12372.500000</td>
+      <td>3.543578e+06</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>1.000000</td>
+      <td>9.00000</td>
+      <td>2010.000000</td>
+      <td>3.000000</td>
+      <td>8.000000</td>
+      <td>14.000000</td>
+      <td>3.000000</td>
+      <td>12.000000</td>
+      <td>2010.000000</td>
+      <td>1.000000</td>
+      <td>...</td>
+      <td>3.228675e+07</td>
+      <td>3130.000000</td>
+      <td>628504.000000</td>
+      <td>1.765946e+06</td>
+      <td>1.506715e+06</td>
+      <td>4.229564e+08</td>
+      <td>4.382388e+08</td>
+      <td>20090.000000</td>
+      <td>56420.000000</td>
+      <td>1.132914e+07</td>
+    </tr>
+  </tbody>
+</table>
+<p>8 rows × 31 columns</p>
+</div>
+
+
+
+Looks like we have mean values ranging from about $0.6$ (for fireplaces) to $2.1 x 10^7$ (21 million, for `Lot Area x YearBuilt`). With the regularization applied by `ElasticNet`, the coefficients are being penalized very disproportionately!
+
+In the next step, we'll apply scaling to address this.
+
+## 5. Scale Data
+
+This is the final scikit-learn preprocessing task of the lab! The `StandardScaler` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)) standarizes features by removing the mean and scaling to unit variance. This will help our data to meet the assumptions of the L1 and L2 regularizers in our `ElasticNet` model.
+
+Unlike previous preprocessing steps, we are going to apply the `StandardScaler` to the entire `X_train`, not just a single column or a subset of columns.
+
+
+```python
+# Replace None with appropriate code
+
+# (0) import StandardScaler from sklearn.preprocessing
+None
+
+# (1) We don't actually have to select anything since 
+# we're using the full X_train
+
+# (2) Instantiate a StandardScaler
+scaler = None
+
+# (3) Fit the scaler on X_train
+None
+
+# (4) Transform X_train using the scaler and
+# assign the result to X_train_scaled
+X_train_scaled = None
+
+# Visually inspect X_train_scaled
+X_train_scaled
+```
+
+
+```python
+# __SOLUTION__
+
+# (0) import StandardScaler from sklearn.preprocessing
+from sklearn.preprocessing import StandardScaler
+
+# (1) We don't actually have to select anything since 
+# we're using the full X_train
+
+# (2) Instantiate a StandardScaler
+scaler = StandardScaler()
+
+# (3) Fit the scaler on X_train
+scaler.fit(X_train)
+
+# (4) Transform X_train using the scaler and
+# assign the result to X_train_scaled
+X_train_scaled = scaler.transform(X_train)
+
+# Visually inspect X_train_scaled
+X_train_scaled
+```
+
+
+
+
+    array([[ 0.06055048, -0.51536449,  1.02037363, ...,  0.68761455,
+             0.1389707 , -0.00512705],
+           [ 0.06055048,  0.39045271,  0.68258474, ..., -0.09329461,
+            -0.3755222 , -0.41721713],
+           [ 0.06055048, -0.51536449, -1.68193746, ..., -0.16814214,
+            -0.43439835, -0.55539469],
+           ...,
+           [ 0.06055048,  1.29626991,  0.24828475, ..., -0.83072093,
+            -1.05548402, -1.27170382],
+           [ 0.06055048,  2.20208711,  0.63432919, ...,  0.47055673,
+             0.03391718, -0.27293012],
+           [ 0.06055048, -0.51536449,  1.06862918, ...,  0.69260438,
+             0.20765954,  0.09548578]])
+
+
+
+
+```python
+# Run this cell without changes
+
+# (5) Make the transformed data back into a dataframe
+X_train = pd.DataFrame(
+    # Pass in NumPy array
+    X_train_scaled,
+    # Set the column names to the original names
+    columns=X_train.columns,
+    # Set the index to match X_train's original index
+    index=X_train.index
+)
+
+# Visually inspect new dataframe
+X_train
+```
+
+
+```python
+# __SOLUTION__
+
+# (5) Make the transformed data back into a dataframe
+X_train = pd.DataFrame(
+    # Pass in NumPy array
+    X_train_scaled,
+    # Set the column names to the original names
+    columns=X_train.columns,
+    # Set the index to match X_train's original index
+    index=X_train.index
+)
+
+# Visually inspect new dataframe
+X_train
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Street</th>
+      <th>OverallCond</th>
+      <th>YearRemodAdd</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>...</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>1023</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>1.020374</td>
+      <td>0.772872</td>
+      <td>-1.112669</td>
+      <td>0.268177</td>
+      <td>0.591298</td>
+      <td>-0.508139</td>
+      <td>0.137143</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.514038</td>
+      <td>-0.660530</td>
+      <td>-1.156764</td>
+      <td>-0.592338</td>
+      <td>-0.602434</td>
+      <td>-0.680494</td>
+      <td>-0.509431</td>
+      <td>0.687615</td>
+      <td>0.138971</td>
+      <td>-0.005127</td>
+    </tr>
+    <tr>
+      <th>810</th>
+      <td>0.06055</td>
+      <td>0.390453</td>
+      <td>0.682585</td>
+      <td>-1.062909</td>
+      <td>0.128036</td>
+      <td>-0.963076</td>
+      <td>0.591298</td>
+      <td>-2.000860</td>
+      <td>-1.372124</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.029559</td>
+      <td>0.143575</td>
+      <td>0.336851</td>
+      <td>-0.123876</td>
+      <td>-0.087311</td>
+      <td>-0.053797</td>
+      <td>-0.182452</td>
+      <td>-0.093295</td>
+      <td>-0.375522</td>
+      <td>-0.417217</td>
+    </tr>
+    <tr>
+      <th>1384</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>-1.681937</td>
+      <td>-1.062909</td>
+      <td>-1.112669</td>
+      <td>-0.347450</td>
+      <td>-0.961392</td>
+      <td>1.357763</td>
+      <td>0.891777</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.212746</td>
+      <td>-0.376445</td>
+      <td>-0.492697</td>
+      <td>-0.457069</td>
+      <td>-0.173864</td>
+      <td>-0.166348</td>
+      <td>-0.254716</td>
+      <td>-0.168142</td>
+      <td>-0.434398</td>
+      <td>-0.555395</td>
+    </tr>
+    <tr>
+      <th>626</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>-0.330782</td>
+      <td>-1.062909</td>
+      <td>0.128036</td>
+      <td>-0.347450</td>
+      <td>0.591298</td>
+      <td>0.611402</td>
+      <td>-0.617490</td>
+      <td>2.115420</td>
+      <td>...</td>
+      <td>0.024526</td>
+      <td>-0.424595</td>
+      <td>-0.032866</td>
+      <td>-0.155942</td>
+      <td>-0.075691</td>
+      <td>0.138028</td>
+      <td>-0.017679</td>
+      <td>-0.821811</td>
+      <td>-0.518672</td>
+      <td>-0.223226</td>
+    </tr>
+    <tr>
+      <th>813</th>
+      <td>0.06055</td>
+      <td>0.390453</td>
+      <td>-1.295893</td>
+      <td>-1.062909</td>
+      <td>1.368742</td>
+      <td>0.268177</td>
+      <td>-0.961392</td>
+      <td>-0.881319</td>
+      <td>-0.617490</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.073756</td>
+      <td>0.056905</td>
+      <td>0.179856</td>
+      <td>-0.048182</td>
+      <td>-0.118566</td>
+      <td>-0.096347</td>
+      <td>-0.152162</td>
+      <td>-0.127511</td>
+      <td>-0.221982</td>
+      <td>-0.188548</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>1095</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>1.020374</td>
+      <td>0.772872</td>
+      <td>0.128036</td>
+      <td>-0.347450</td>
+      <td>0.591298</td>
+      <td>-1.254499</td>
+      <td>-0.617490</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.077107</td>
+      <td>0.143575</td>
+      <td>0.391872</td>
+      <td>-0.118995</td>
+      <td>-0.153268</td>
+      <td>-0.114758</td>
+      <td>-0.222160</td>
+      <td>-0.024863</td>
+      <td>-0.369750</td>
+      <td>-0.367641</td>
+    </tr>
+    <tr>
+      <th>1130</th>
+      <td>0.06055</td>
+      <td>-2.326999</td>
+      <td>-1.681937</td>
+      <td>0.772872</td>
+      <td>1.368742</td>
+      <td>0.268177</td>
+      <td>2.143989</td>
+      <td>2.104124</td>
+      <td>0.891777</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.239662</td>
+      <td>-0.857945</td>
+      <td>-0.294745</td>
+      <td>0.209829</td>
+      <td>-0.482997</td>
+      <td>-0.282217</td>
+      <td>-0.098219</td>
+      <td>-1.566009</td>
+      <td>-0.362054</td>
+      <td>0.762466</td>
+    </tr>
+    <tr>
+      <th>1294</th>
+      <td>0.06055</td>
+      <td>1.296270</td>
+      <td>0.248285</td>
+      <td>-1.062909</td>
+      <td>-1.112669</td>
+      <td>-0.963076</td>
+      <td>-0.961392</td>
+      <td>-0.881319</td>
+      <td>-1.372124</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.252209</td>
+      <td>-0.665345</td>
+      <td>-0.471536</td>
+      <td>-0.752939</td>
+      <td>-0.354183</td>
+      <td>-0.239470</td>
+      <td>-0.421792</td>
+      <td>-0.830721</td>
+      <td>-1.055484</td>
+      <td>-1.271704</td>
+    </tr>
+    <tr>
+      <th>860</th>
+      <td>0.06055</td>
+      <td>2.202087</td>
+      <td>0.634329</td>
+      <td>-1.062909</td>
+      <td>0.128036</td>
+      <td>0.268177</td>
+      <td>0.591298</td>
+      <td>-0.134958</td>
+      <td>-0.617490</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.304065</td>
+      <td>-0.256070</td>
+      <td>-0.731872</td>
+      <td>-0.420148</td>
+      <td>-0.185431</td>
+      <td>-0.300083</td>
+      <td>-0.273978</td>
+      <td>0.470557</td>
+      <td>0.033917</td>
+      <td>-0.272930</td>
+    </tr>
+    <tr>
+      <th>1126</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>1.068629</td>
+      <td>0.772872</td>
+      <td>-1.112669</td>
+      <td>0.268177</td>
+      <td>0.591298</td>
+      <td>-0.134958</td>
+      <td>0.891777</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.470762</td>
+      <td>-0.323480</td>
+      <td>-0.712451</td>
+      <td>-0.370273</td>
+      <td>-0.555498</td>
+      <td>-0.633899</td>
+      <td>-0.473107</td>
+      <td>0.692604</td>
+      <td>0.207660</td>
+      <td>0.095486</td>
+    </tr>
+  </tbody>
+</table>
+<p>1095 rows × 31 columns</p>
+</div>
+
+
+
+
+```python
+# Run this cell without changes
+X_train.describe()
+```
+
+
+```python
+# __SOLUTION__
+X_train.describe()
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Street</th>
+      <th>OverallCond</th>
+      <th>YearRemodAdd</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>...</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>count</th>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>...</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+      <td>1.095000e+03</td>
+    </tr>
+    <tr>
+      <th>mean</th>
+      <td>3.617603e-16</td>
+      <td>-2.984928e-16</td>
+      <td>-3.202309e-15</td>
+      <td>-6.488975e-18</td>
+      <td>2.530700e-16</td>
+      <td>-6.813423e-17</td>
+      <td>-1.946692e-17</td>
+      <td>7.624545e-17</td>
+      <td>6.328535e-14</td>
+      <td>9.084565e-17</td>
+      <td>...</td>
+      <td>2.757814e-17</td>
+      <td>-1.492464e-16</td>
+      <td>2.984928e-16</td>
+      <td>-5.191180e-17</td>
+      <td>-4.380058e-17</td>
+      <td>8.111218e-18</td>
+      <td>6.326750e-17</td>
+      <td>2.271141e-17</td>
+      <td>-8.435667e-17</td>
+      <td>-1.460019e-16</td>
+    </tr>
+    <tr>
+      <th>std</th>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>...</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+      <td>1.000457e+00</td>
+    </tr>
+    <tr>
+      <th>min</th>
+      <td>-1.651514e+01</td>
+      <td>-4.138633e+00</td>
+      <td>-1.681937e+00</td>
+      <td>-2.898690e+00</td>
+      <td>-3.594081e+00</td>
+      <td>-2.809956e+00</td>
+      <td>-9.613917e-01</td>
+      <td>-2.000860e+00</td>
+      <td>-1.372124e+00</td>
+      <td>-4.727195e-01</td>
+      <td>...</td>
+      <td>-5.924092e-01</td>
+      <td>-1.869094e+00</td>
+      <td>-2.145314e+00</td>
+      <td>-1.236170e+00</td>
+      <td>-8.331620e-01</td>
+      <td>-8.554045e-01</td>
+      <td>-6.579525e-01</td>
+      <td>-3.629662e+00</td>
+      <td>-1.822413e+00</td>
+      <td>-2.263992e+00</td>
+    </tr>
+    <tr>
+      <th>25%</th>
+      <td>6.055048e-02</td>
+      <td>-5.153645e-01</td>
+      <td>-9.098486e-01</td>
+      <td>-1.062909e+00</td>
+      <td>-1.112669e+00</td>
+      <td>-9.630763e-01</td>
+      <td>-9.613917e-01</td>
+      <td>-5.081387e-01</td>
+      <td>-6.174901e-01</td>
+      <td>-4.727195e-01</td>
+      <td>...</td>
+      <td>-2.630443e-01</td>
+      <td>-6.075647e-01</td>
+      <td>-4.913748e-01</td>
+      <td>-5.157986e-01</td>
+      <td>-3.611281e-01</td>
+      <td>-2.867533e-01</td>
+      <td>-3.567399e-01</td>
+      <td>-8.182463e-01</td>
+      <td>-7.428247e-01</td>
+      <td>-7.274358e-01</td>
+    </tr>
+    <tr>
+      <th>50%</th>
+      <td>6.055048e-02</td>
+      <td>-5.153645e-01</td>
+      <td>4.413070e-01</td>
+      <td>7.728723e-01</td>
+      <td>1.280363e-01</td>
+      <td>-3.474496e-01</td>
+      <td>5.912984e-01</td>
+      <td>-1.349584e-01</td>
+      <td>1.371434e-01</td>
+      <td>-4.727195e-01</td>
+      <td>...</td>
+      <td>-1.225671e-01</td>
+      <td>-8.754500e-02</td>
+      <td>-2.052126e-02</td>
+      <td>-1.481819e-01</td>
+      <td>-1.425420e-01</td>
+      <td>-1.107031e-01</td>
+      <td>-1.666760e-01</td>
+      <td>-9.757162e-02</td>
+      <td>-1.758051e-01</td>
+      <td>-9.776744e-02</td>
+    </tr>
+    <tr>
+      <th>75%</th>
+      <td>6.055048e-02</td>
+      <td>3.904527e-01</td>
+      <td>9.238625e-01</td>
+      <td>7.728723e-01</td>
+      <td>1.280363e-01</td>
+      <td>2.681771e-01</td>
+      <td>5.912984e-01</td>
+      <td>6.114023e-01</td>
+      <td>8.917769e-01</td>
+      <td>-4.727195e-01</td>
+      <td>...</td>
+      <td>5.494964e-02</td>
+      <td>3.458047e-01</td>
+      <td>3.815560e-01</td>
+      <td>3.006240e-01</td>
+      <td>1.367581e-01</td>
+      <td>8.450031e-02</td>
+      <td>9.285201e-02</td>
+      <td>6.826247e-01</td>
+      <td>4.938631e-01</td>
+      <td>4.991145e-01</td>
+    </tr>
+    <tr>
+      <th>max</th>
+      <td>6.055048e-02</td>
+      <td>3.107904e+00</td>
+      <td>1.213396e+00</td>
+      <td>2.608653e+00</td>
+      <td>6.331565e+00</td>
+      <td>4.577564e+00</td>
+      <td>3.696679e+00</td>
+      <td>2.104124e+00</td>
+      <td>1.646410e+00</td>
+      <td>2.115420e+00</td>
+      <td>...</td>
+      <td>2.329899e+01</td>
+      <td>1.296110e+01</td>
+      <td>1.079730e+01</td>
+      <td>2.070026e+01</td>
+      <td>1.922514e+01</td>
+      <td>1.846433e+01</td>
+      <td>1.618922e+01</td>
+      <td>2.845718e+00</td>
+      <td>8.968854e+00</td>
+      <td>7.933529e+00</td>
+    </tr>
+  </tbody>
+</table>
+<p>8 rows × 31 columns</p>
+</div>
+
+
+
+Great, now the means of the values are all much more centered. Let's see how the model performs now:
+
+
+```python
+# Run this cell without changes
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+
+```python
+# __SOLUTION__
+cross_val_score(model, X_train, y_train, cv=3)
+```
+
+
+
+
+    array([0.75126826, 0.67341002, 0.80080353])
+
+
+
+Well, that was only a minor improvement over our first model. Seems like the interaction terms didn't provide that much information after all! There is plenty more feature engineering you could do if this were a real project, but we'll stop there.
+
+### Quick Scaling FAQs:
+
+1. **Do you only need to scale if you're using `PolynomialFeatures`?** No, we should have scaled regardless. `PolynomialFeatures` just exaggerated the difference in the units and caused the model to produce a warning, but it's a best practice to scale whenever your model has any distance-based metric. (In this case, the regularization within `ElasticNet` is distance-based.)
+2. **Do you really need to scale one-hot encoded features, if they are already just 0 or 1?** Professional opinions vary on this. Binary values already violate the assumptions of some models, so you might want to investigate empirically with your particular data and model whether you get better performance by scaling the one-hot encoded features or leaving them as just 0 and 1.
+
+## 6. Preprocess Test Data
+
+> Apply Steps 1-5 to the test data in order to perform a final model evaluation.
+
+This part is done for you, and it should work automatically, assuming you didn't change the names of any of the transformer objects. Note that we are intentionally **not instantiating or fitting the transformers** here, because you always want to fit transformers on the training data only.
+
+*Step 1: Drop Irrelevant Columns*
+
+
+```python
+# Run this cell without changes
+X_test = X_test.loc[:, relevant_columns]
+```
+
+
+```python
+# __SOLUTION__
+X_test = X_test.loc[:, relevant_columns]
+```
+
+*Step 2: Handle Missing Values*
+
+
+```python
+# Run this cell without changes
+
+# Replace FireplaceQu NaNs with "N/A"s
+X_test["FireplaceQu"] = X_test["FireplaceQu"].fillna("N/A")
+
+# Add missing indicator for lot frontage
+frontage_test = X_test[["LotFrontage"]]
+frontage_missing_test = missing_indicator.transform(frontage_test)
+X_test["LotFrontage_Missing"] = frontage_missing_test
+
+# Impute missing lot frontage values
+frontage_imputed_test = imputer.transform(frontage_test)
+X_test["LotFrontage"] = frontage_imputed_test
+
+# Check that there are no more missing values
+X_test.isna().sum()
+```
+
+
+```python
+# __SOLUTION__
+
+# Replace FireplaceQu NaNs with "N/A"s
+X_test["FireplaceQu"] = X_test["FireplaceQu"].fillna("N/A")
+
+# Add missing indicator for lot frontage
+frontage_test = X_test[["LotFrontage"]]
+frontage_missing_test = missing_indicator.transform(frontage_test)
+X_test["LotFrontage_Missing"] = frontage_missing_test
+
+# Impute missing lot frontage values
+frontage_imputed_test = imputer.transform(frontage_test)
+X_test["LotFrontage"] = frontage_imputed_test
+
+# Check that there are no more missing values
+X_test.isna().sum()
+```
+
+
+
+
+    LotFrontage            0
+    LotArea                0
+    Street                 0
+    OverallQual            0
+    OverallCond            0
+    YearBuilt              0
+    YearRemodAdd           0
+    GrLivArea              0
+    FullBath               0
+    BedroomAbvGr           0
+    TotRmsAbvGrd           0
+    Fireplaces             0
+    FireplaceQu            0
+    MoSold                 0
+    YrSold                 0
+    LotFrontage_Missing    0
+    dtype: int64
+
+
+
+*Step 3: Convert Categorical Features into Numbers*
+
+
+```python
+# Run this cell without changes
+
+# Binarize street type
+street_test = X_test["Street"]
+street_binarized_test = binarizer_street.transform(street_test)
+X_test["Street"] = street_binarized_test
+
+# Binarize frontage missing
+frontage_missing_test = X_test["LotFrontage_Missing"]
+frontage_missing_binarized_test = binarizer_frontage_missing.transform(frontage_missing_test)
+X_test["LotFrontage_Missing"] = frontage_missing_binarized_test
+
+# One-hot encode fireplace quality
+fireplace_qu_test = X_test[["FireplaceQu"]]
+fireplace_qu_encoded_test = ohe.transform(fireplace_qu_test)
+fireplace_qu_encoded_test = pd.DataFrame(
+    fireplace_qu_encoded_test,
+    columns=ohe.categories_[0],
+    index=X_test.index
+)
+X_test.drop("FireplaceQu", axis=1, inplace=True)
+X_test = pd.concat([X_test, fireplace_qu_encoded_test], axis=1)
+
+# Visually inspect X_test
+X_test
+```
+
+
+```python
+# __SOLUTION__
+
+# Binarize street type
+street_test = X_test["Street"]
+street_binarized_test = binarizer_street.transform(street_test)
+X_test["Street"] = street_binarized_test
+
+# Binarize frontage missing
+frontage_missing_test = X_test["LotFrontage_Missing"]
+frontage_missing_binarized_test = binarizer_frontage_missing.transform(frontage_missing_test)
+X_test["LotFrontage_Missing"] = frontage_missing_binarized_test
+
+# One-hot encode fireplace quality
+fireplace_qu_test = X_test[["FireplaceQu"]]
+fireplace_qu_encoded_test = ohe.transform(fireplace_qu_test)
+fireplace_qu_encoded_test = pd.DataFrame(
+    fireplace_qu_encoded_test,
+    columns=ohe.categories_[0],
+    index=X_test.index
+)
+X_test.drop("FireplaceQu", axis=1, inplace=True)
+X_test = pd.concat([X_test, fireplace_qu_encoded_test], axis=1)
+
+# Visually inspect X_test
+X_test
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>LotFrontage</th>
+      <th>LotArea</th>
+      <th>Street</th>
+      <th>OverallQual</th>
+      <th>OverallCond</th>
+      <th>YearBuilt</th>
+      <th>YearRemodAdd</th>
+      <th>GrLivArea</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>...</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>Ex</th>
+      <th>Fa</th>
+      <th>Gd</th>
+      <th>N/A</th>
+      <th>Po</th>
+      <th>TA</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>892</th>
+      <td>70.0</td>
+      <td>8414</td>
+      <td>1</td>
+      <td>6</td>
+      <td>8</td>
+      <td>1963</td>
+      <td>2003</td>
+      <td>1068</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>0</td>
+      <td>2</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1105</th>
+      <td>98.0</td>
+      <td>12256</td>
+      <td>1</td>
+      <td>8</td>
+      <td>5</td>
+      <td>1994</td>
+      <td>1995</td>
+      <td>2622</td>
+      <td>2</td>
+      <td>3</td>
+      <td>...</td>
+      <td>2</td>
+      <td>4</td>
+      <td>2010</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>413</th>
+      <td>56.0</td>
+      <td>8960</td>
+      <td>1</td>
+      <td>5</td>
+      <td>6</td>
+      <td>1927</td>
+      <td>1950</td>
+      <td>1028</td>
+      <td>1</td>
+      <td>2</td>
+      <td>...</td>
+      <td>1</td>
+      <td>3</td>
+      <td>2010</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>522</th>
+      <td>50.0</td>
+      <td>5000</td>
+      <td>1</td>
+      <td>6</td>
+      <td>7</td>
+      <td>1947</td>
+      <td>1950</td>
+      <td>1664</td>
+      <td>2</td>
+      <td>3</td>
+      <td>...</td>
+      <td>2</td>
+      <td>10</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1036</th>
+      <td>89.0</td>
+      <td>12898</td>
+      <td>1</td>
+      <td>9</td>
+      <td>5</td>
+      <td>2007</td>
+      <td>2008</td>
+      <td>1620</td>
+      <td>2</td>
+      <td>2</td>
+      <td>...</td>
+      <td>1</td>
+      <td>9</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>988</th>
+      <td>70.0</td>
+      <td>12046</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1976</td>
+      <td>1976</td>
+      <td>2030</td>
+      <td>2</td>
+      <td>4</td>
+      <td>...</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>243</th>
+      <td>75.0</td>
+      <td>10762</td>
+      <td>1</td>
+      <td>6</td>
+      <td>6</td>
+      <td>1980</td>
+      <td>1980</td>
+      <td>1217</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>4</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+    </tr>
+    <tr>
+      <th>1342</th>
+      <td>70.0</td>
+      <td>9375</td>
+      <td>1</td>
+      <td>8</td>
+      <td>5</td>
+      <td>2002</td>
+      <td>2002</td>
+      <td>2169</td>
+      <td>2</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1057</th>
+      <td>70.0</td>
+      <td>29959</td>
+      <td>1</td>
+      <td>7</td>
+      <td>6</td>
+      <td>1994</td>
+      <td>1994</td>
+      <td>1850</td>
+      <td>2</td>
+      <td>3</td>
+      <td>...</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2009</td>
+      <td>1</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+    <tr>
+      <th>1418</th>
+      <td>71.0</td>
+      <td>9204</td>
+      <td>1</td>
+      <td>5</td>
+      <td>5</td>
+      <td>1963</td>
+      <td>1963</td>
+      <td>1144</td>
+      <td>1</td>
+      <td>3</td>
+      <td>...</td>
+      <td>0</td>
+      <td>8</td>
+      <td>2008</td>
+      <td>0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>365 rows × 21 columns</p>
+</div>
+
+
+
+*Step 4: Add Interaction Terms*
+
+
+```python
+# Run this cell without changes
+
+# (1) select relevant data
+poly_columns_test = X_test[poly_column_names]
+
+# (4) transform using fitted transformer
+poly_columns_expanded_test = poly.transform(poly_columns_test) 
+
+# (5) add back to original dataset
+poly_columns_expanded_test = pd.DataFrame(
+    poly_columns_expanded_test,
+    columns=poly.get_feature_names(poly_column_names),
+    index=X_test.index
+)
+X_test.drop(poly_column_names, axis=1, inplace=True)
+X_test = pd.concat([X_test, poly_columns_expanded_test], axis=1)
+
+# Visually inspect X_test
+X_test
+```
+
+
+```python
+# __SOLUTION__
+
+# (1) select relevant data
+poly_columns_test = X_test[poly_column_names]
+
+# (4) transform using fitted transformer
+poly_columns_expanded_test = poly.transform(poly_columns_test) 
+
+# (5) add back to original dataset
+poly_columns_expanded_test = pd.DataFrame(
+    poly_columns_expanded_test,
+    columns=poly.get_feature_names(poly_column_names),
+    index=X_test.index
+)
+X_test.drop(poly_column_names, axis=1, inplace=True)
+X_test = pd.concat([X_test, poly_columns_expanded_test], axis=1)
+
+# Visually inspect X_test
+X_test
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Street</th>
+      <th>OverallCond</th>
+      <th>YearRemodAdd</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>...</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>892</th>
+      <td>1</td>
+      <td>8</td>
+      <td>2003</td>
+      <td>1</td>
+      <td>3</td>
+      <td>6</td>
+      <td>0</td>
+      <td>2</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>...</td>
+      <td>588980.0</td>
+      <td>420.0</td>
+      <td>137410.0</td>
+      <td>74760.0</td>
+      <td>50484.0</td>
+      <td>16516682.0</td>
+      <td>8986152.0</td>
+      <td>11778.0</td>
+      <td>6408.0</td>
+      <td>2096484.0</td>
+    </tr>
+    <tr>
+      <th>1105</th>
+      <td>1</td>
+      <td>5</td>
+      <td>1995</td>
+      <td>2</td>
+      <td>3</td>
+      <td>9</td>
+      <td>2</td>
+      <td>4</td>
+      <td>2010</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1201088.0</td>
+      <td>784.0</td>
+      <td>195412.0</td>
+      <td>256956.0</td>
+      <td>98048.0</td>
+      <td>24438464.0</td>
+      <td>32135232.0</td>
+      <td>15952.0</td>
+      <td>20976.0</td>
+      <td>5228268.0</td>
+    </tr>
+    <tr>
+      <th>413</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1950</td>
+      <td>1</td>
+      <td>2</td>
+      <td>5</td>
+      <td>1</td>
+      <td>3</td>
+      <td>2010</td>
+      <td>0</td>
+      <td>...</td>
+      <td>501760.0</td>
+      <td>280.0</td>
+      <td>107912.0</td>
+      <td>57568.0</td>
+      <td>44800.0</td>
+      <td>17265920.0</td>
+      <td>9210880.0</td>
+      <td>9635.0</td>
+      <td>5140.0</td>
+      <td>1980956.0</td>
+    </tr>
+    <tr>
+      <th>522</th>
+      <td>1</td>
+      <td>7</td>
+      <td>1950</td>
+      <td>2</td>
+      <td>3</td>
+      <td>7</td>
+      <td>2</td>
+      <td>10</td>
+      <td>2006</td>
+      <td>0</td>
+      <td>...</td>
+      <td>250000.0</td>
+      <td>300.0</td>
+      <td>97350.0</td>
+      <td>83200.0</td>
+      <td>30000.0</td>
+      <td>9735000.0</td>
+      <td>8320000.0</td>
+      <td>11682.0</td>
+      <td>9984.0</td>
+      <td>3239808.0</td>
+    </tr>
+    <tr>
+      <th>1036</th>
+      <td>1</td>
+      <td>5</td>
+      <td>2008</td>
+      <td>2</td>
+      <td>2</td>
+      <td>6</td>
+      <td>1</td>
+      <td>9</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>...</td>
+      <td>1147922.0</td>
+      <td>801.0</td>
+      <td>178623.0</td>
+      <td>144180.0</td>
+      <td>116082.0</td>
+      <td>25886286.0</td>
+      <td>20894760.0</td>
+      <td>18063.0</td>
+      <td>14580.0</td>
+      <td>3251340.0</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>988</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1976</td>
+      <td>2</td>
+      <td>4</td>
+      <td>8</td>
+      <td>1</td>
+      <td>6</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>...</td>
+      <td>843220.0</td>
+      <td>420.0</td>
+      <td>138320.0</td>
+      <td>142100.0</td>
+      <td>72276.0</td>
+      <td>23802896.0</td>
+      <td>24453380.0</td>
+      <td>11856.0</td>
+      <td>12180.0</td>
+      <td>4011280.0</td>
+    </tr>
+    <tr>
+      <th>243</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1980</td>
+      <td>1</td>
+      <td>3</td>
+      <td>6</td>
+      <td>1</td>
+      <td>4</td>
+      <td>2009</td>
+      <td>0</td>
+      <td>...</td>
+      <td>807150.0</td>
+      <td>450.0</td>
+      <td>148500.0</td>
+      <td>91275.0</td>
+      <td>64572.0</td>
+      <td>21308760.0</td>
+      <td>13097354.0</td>
+      <td>11880.0</td>
+      <td>7302.0</td>
+      <td>2409660.0</td>
+    </tr>
+    <tr>
+      <th>1342</th>
+      <td>1</td>
+      <td>5</td>
+      <td>2002</td>
+      <td>2</td>
+      <td>3</td>
+      <td>7</td>
+      <td>1</td>
+      <td>8</td>
+      <td>2007</td>
+      <td>1</td>
+      <td>...</td>
+      <td>656250.0</td>
+      <td>560.0</td>
+      <td>140140.0</td>
+      <td>151830.0</td>
+      <td>75000.0</td>
+      <td>18768750.0</td>
+      <td>20334375.0</td>
+      <td>16016.0</td>
+      <td>17352.0</td>
+      <td>4342338.0</td>
+    </tr>
+    <tr>
+      <th>1057</th>
+      <td>1</td>
+      <td>6</td>
+      <td>1994</td>
+      <td>2</td>
+      <td>3</td>
+      <td>7</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2009</td>
+      <td>1</td>
+      <td>...</td>
+      <td>2097130.0</td>
+      <td>490.0</td>
+      <td>139580.0</td>
+      <td>129500.0</td>
+      <td>209713.0</td>
+      <td>59738246.0</td>
+      <td>55424150.0</td>
+      <td>13958.0</td>
+      <td>12950.0</td>
+      <td>3688900.0</td>
+    </tr>
+    <tr>
+      <th>1418</th>
+      <td>1</td>
+      <td>5</td>
+      <td>1963</td>
+      <td>1</td>
+      <td>3</td>
+      <td>6</td>
+      <td>0</td>
+      <td>8</td>
+      <td>2008</td>
+      <td>0</td>
+      <td>...</td>
+      <td>653484.0</td>
+      <td>355.0</td>
+      <td>139373.0</td>
+      <td>81224.0</td>
+      <td>46020.0</td>
+      <td>18067452.0</td>
+      <td>10529376.0</td>
+      <td>9815.0</td>
+      <td>5720.0</td>
+      <td>2245672.0</td>
+    </tr>
+  </tbody>
+</table>
+<p>365 rows × 31 columns</p>
+</div>
+
+
+
+*Step 5: Scale Data*
+
+
+```python
+# Run this cell without changes
+X_test_scaled = scaler.transform(X_test)
+X_test = pd.DataFrame(
+    X_test_scaled,
+    columns=X_test.columns,
+    index=X_test.index
+)
+X_test
+```
+
+
+```python
+# __SOLUTION__
+X_test_scaled = scaler.transform(X_test)
+X_test = pd.DataFrame(
+    X_test_scaled,
+    columns=X_test.columns,
+    index=X_test.index
+)
+X_test
+```
+
+
+
+
+<div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Street</th>
+      <th>OverallCond</th>
+      <th>YearRemodAdd</th>
+      <th>FullBath</th>
+      <th>BedroomAbvGr</th>
+      <th>TotRmsAbvGrd</th>
+      <th>Fireplaces</th>
+      <th>MoSold</th>
+      <th>YrSold</th>
+      <th>LotFrontage_Missing</th>
+      <th>...</th>
+      <th>LotFrontage LotArea</th>
+      <th>LotFrontage OverallQual</th>
+      <th>LotFrontage YearBuilt</th>
+      <th>LotFrontage GrLivArea</th>
+      <th>LotArea OverallQual</th>
+      <th>LotArea YearBuilt</th>
+      <th>LotArea GrLivArea</th>
+      <th>OverallQual YearBuilt</th>
+      <th>OverallQual GrLivArea</th>
+      <th>YearBuilt GrLivArea</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>892</th>
+      <td>0.06055</td>
+      <td>2.202087</td>
+      <td>0.875607</td>
+      <td>-1.062909</td>
+      <td>0.128036</td>
+      <td>-0.347450</td>
+      <td>-0.961392</td>
+      <td>-1.627680</td>
+      <td>-1.372124</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.179133</td>
+      <td>-0.087545</td>
+      <td>-0.028237</td>
+      <td>-0.466080</td>
+      <td>-0.225635</td>
+      <td>-0.214633</td>
+      <td>-0.347611</td>
+      <td>-0.116818</td>
+      <td>-0.653741</td>
+      <td>-0.882713</td>
+    </tr>
+    <tr>
+      <th>1105</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>0.489563</td>
+      <td>0.772872</td>
+      <td>0.128036</td>
+      <td>1.499430</td>
+      <td>2.143989</td>
+      <td>-0.881319</td>
+      <td>1.646410</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>0.274247</td>
+      <td>1.665114</td>
+      <td>1.250343</td>
+      <td>1.814226</td>
+      <td>0.409674</td>
+      <td>0.149432</td>
+      <td>0.544200</td>
+      <td>1.370866</td>
+      <td>2.149226</td>
+      <td>2.107822</td>
+    </tr>
+    <tr>
+      <th>413</th>
+      <td>0.06055</td>
+      <td>0.390453</td>
+      <td>-1.681937</td>
+      <td>-1.062909</td>
+      <td>-1.112669</td>
+      <td>-0.963076</td>
+      <td>0.591298</td>
+      <td>-1.254499</td>
+      <td>1.646410</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.243736</td>
+      <td>-0.761645</td>
+      <td>-0.678482</td>
+      <td>-0.681250</td>
+      <td>-0.301556</td>
+      <td>-0.180200</td>
+      <td>-0.338954</td>
+      <td>-0.880619</td>
+      <td>-0.897711</td>
+      <td>-0.993030</td>
+    </tr>
+    <tr>
+      <th>522</th>
+      <td>0.06055</td>
+      <td>1.296270</td>
+      <td>-1.681937</td>
+      <td>0.772872</td>
+      <td>0.128036</td>
+      <td>0.268177</td>
+      <td>2.143989</td>
+      <td>1.357763</td>
+      <td>-1.372124</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.430211</td>
+      <td>-0.665345</td>
+      <td>-0.911307</td>
+      <td>-0.360448</td>
+      <td>-0.499239</td>
+      <td>-0.526303</td>
+      <td>-0.373275</td>
+      <td>-0.151034</td>
+      <td>0.034302</td>
+      <td>0.209045</td>
+    </tr>
+    <tr>
+      <th>1036</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>1.116885</td>
+      <td>0.772872</td>
+      <td>-1.112669</td>
+      <td>-0.347450</td>
+      <td>0.591298</td>
+      <td>0.984583</td>
+      <td>0.891777</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>0.234868</td>
+      <td>1.746969</td>
+      <td>0.880251</td>
+      <td>0.402758</td>
+      <td>0.650552</td>
+      <td>0.215970</td>
+      <td>0.111164</td>
+      <td>2.123261</td>
+      <td>0.918599</td>
+      <td>0.220057</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>988</th>
+      <td>0.06055</td>
+      <td>0.390453</td>
+      <td>-0.427293</td>
+      <td>0.772872</td>
+      <td>1.368742</td>
+      <td>0.883804</td>
+      <td>0.591298</td>
+      <td>-0.134958</td>
+      <td>-0.617490</td>
+      <td>2.115420</td>
+      <td>...</td>
+      <td>0.009179</td>
+      <td>-0.087545</td>
+      <td>-0.008177</td>
+      <td>0.376726</td>
+      <td>0.065439</td>
+      <td>0.120223</td>
+      <td>0.248259</td>
+      <td>-0.089018</td>
+      <td>0.456825</td>
+      <td>0.945722</td>
+    </tr>
+    <tr>
+      <th>243</th>
+      <td>0.06055</td>
+      <td>0.390453</td>
+      <td>-0.234271</td>
+      <td>-1.062909</td>
+      <td>0.128036</td>
+      <td>-0.347450</td>
+      <td>0.591298</td>
+      <td>-0.881319</td>
+      <td>0.891777</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.017538</td>
+      <td>0.056905</td>
+      <td>0.216228</td>
+      <td>-0.259384</td>
+      <td>-0.037463</td>
+      <td>0.005599</td>
+      <td>-0.189229</td>
+      <td>-0.080464</td>
+      <td>-0.481730</td>
+      <td>-0.583662</td>
+    </tr>
+    <tr>
+      <th>1342</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>0.827351</td>
+      <td>0.772872</td>
+      <td>0.128036</td>
+      <td>0.268177</td>
+      <td>0.591298</td>
+      <td>0.611402</td>
+      <td>-0.617490</td>
+      <td>2.115420</td>
+      <td>...</td>
+      <td>-0.129307</td>
+      <td>0.586555</td>
+      <td>0.031943</td>
+      <td>0.498503</td>
+      <td>0.101823</td>
+      <td>-0.111134</td>
+      <td>0.089575</td>
+      <td>1.393676</td>
+      <td>1.451947</td>
+      <td>1.261849</td>
+    </tr>
+    <tr>
+      <th>1057</th>
+      <td>0.06055</td>
+      <td>0.390453</td>
+      <td>0.441307</td>
+      <td>0.772872</td>
+      <td>0.128036</td>
+      <td>0.268177</td>
+      <td>0.591298</td>
+      <td>-2.000860</td>
+      <td>0.891777</td>
+      <td>2.115420</td>
+      <td>...</td>
+      <td>0.937934</td>
+      <td>0.249505</td>
+      <td>0.019598</td>
+      <td>0.219028</td>
+      <td>1.901175</td>
+      <td>1.771722</td>
+      <td>1.441398</td>
+      <td>0.660170</td>
+      <td>0.604977</td>
+      <td>0.637882</td>
+    </tr>
+    <tr>
+      <th>1418</th>
+      <td>0.06055</td>
+      <td>-0.515364</td>
+      <td>-1.054615</td>
+      <td>-1.062909</td>
+      <td>0.128036</td>
+      <td>-0.347450</td>
+      <td>-0.961392</td>
+      <td>0.611402</td>
+      <td>0.137143</td>
+      <td>-0.472719</td>
+      <td>...</td>
+      <td>-0.131356</td>
+      <td>-0.400520</td>
+      <td>0.015035</td>
+      <td>-0.385179</td>
+      <td>-0.285261</td>
+      <td>-0.143364</td>
+      <td>-0.288159</td>
+      <td>-0.816464</td>
+      <td>-0.786116</td>
+      <td>-0.740253</td>
+    </tr>
+  </tbody>
+</table>
+<p>365 rows × 31 columns</p>
+</div>
+
+
+
+Fit the model on the full training set, evaluate on test set:
+
+
+```python
+# Run this cell without changes
+model.fit(X_train, y_train)
+model.score(X_test, y_test)
+```
+
+
+```python
+# __SOLUTION__
+model.fit(X_train, y_train)
+model.score(X_test, y_test)
+```
+
+
+
+
+    0.7943110080438888
+
+
+
+Great, that worked! Now we have completed the full process of preprocessing the Ames Housing data in preparation for machine learning!
 
 
 ```python
