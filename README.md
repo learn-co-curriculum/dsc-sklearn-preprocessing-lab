@@ -50,10 +50,6 @@ Because we are using a model with regularization, it's important to scale the da
 
 Apply Steps 1-5 to the test data in order to perform a final model evaluation.
 
-#### BONUS: Refactor into a Pipeline
-
-In a professional data science setting, this work would be accomplished mainly within a scikit-learn pipeline, not by repeatedly creating pandas `DataFrame`s, transforming them, and concatenating them together. In this step you will optionally practice refactoring your existing code into a pipeline (or you can just look at the solution branch).
-
 ## Lab Setup
 
 ### Getting the Data
@@ -579,7 +575,7 @@ X_train.info()
 
 Great, now we only have 1 column remaining that isn't type `float64` or `int64`!
 
-#### Note on Preprocessing Binary Values
+#### Note on Preprocessing Boolean Values
 For binary values like `LotFrontage_Missing`, you might see a few different approaches to preprocessing. Python treats `True` and `1` as equal:
 
 
@@ -1082,7 +1078,6 @@ model.score(X_test, y_test)
 
 Great, that worked! Now we have completed the full process of preprocessing the Ames Housing data in preparation for machine learning!
 
+## Summary
 
-```python
-
-```
+In this cumulative lab, you used various techniques to prepare the Ames Housing data for modeling. You filtered down the full dataset to only relevant columns, filled in missing values, converted categorical data into numeric data, added interaction terms, and scaled the data. Each time, you practiced the scikit-learn transformer workflow by instantiating the transformer, fitting on the relevant training data, transforming the training data, and transforming the test data at the end (without re-instantiating or re-fitting the transformer object).
