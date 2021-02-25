@@ -383,7 +383,7 @@ Now the shape of `X_train` should still be the same as before:
 assert X_train.shape == (1095, 16)
 ```
 
-And now our only NaN values should be in `FireplaceQu`, which are NaN values but not missing values:
+And now our `X_train` no longer contains any NaN values:
 
 
 ```python
@@ -753,22 +753,6 @@ ax.set_xlabel("Lot Area")
 ax.set_ylabel("Sale Price")
 ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
 ```
-
-
-```python
-# __SOlUTION__
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots()
-ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
-ax.set_xlabel("Lot Area")
-ax.set_ylabel("Sale Price")
-ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
-```
-
-
-![png](index_files/index_90_0.png)
-
 
 Sometimes we can improve the linearity by introducing an *interaction term*. In this case, multiplying the lot area by the overall quality:
 
