@@ -2330,7 +2330,7 @@ Now the shape of `X_train` should still be the same as before:
 assert X_train.shape == (1095, 16)
 ```
 
-And now our only NaN values should be in `FireplaceQu`, which are NaN values but not missing values:
+And now our `X_train` no longer contains any NaN values:
 
 
 ```python
@@ -4334,6 +4334,21 @@ Now that we have completed the minimum preprocessing to run a model without erro
 
 Linear models (including `ElasticNet`) are limited in the information they can learn because they are assuming a linear relationship between features and target. Often our real-world features aren't related to the target this way:
 
+
+```python
+import matplotlib.pyplot as plt
+
+fig, ax = plt.subplots()
+ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
+ax.set_xlabel("Lot Area")
+ax.set_ylabel("Sale Price")
+ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
+```
+
+
+![png](index_files/index_89_0.png)
+
+
 Sometimes we can improve the linearity by introducing an *interaction term*. In this case, multiplying the lot area by the overall quality:
 
 
@@ -4347,7 +4362,7 @@ ax.set_title("(Lot Area x Overall Quality) vs. Sale Price for Ames Housing Data"
 ```
 
 
-![png](index_files/index_90_0.png)
+![png](index_files/index_91_0.png)
 
 
 While we could manually add individual interaction terms, there is a preprocessor from scikit-learn called `PolynomialFeatures` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PolynomialFeatures.html)) that will generate all combinations of interaction terms (as well as polynomial terms, e.g. `Lot Area` squared) for a set of columns.
