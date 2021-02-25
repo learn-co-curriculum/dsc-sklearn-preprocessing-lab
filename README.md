@@ -2569,7 +2569,7 @@ assert X_train.shape == (1095, 16)
 assert X_train.shape == (1095, 16)
 ```
 
-And now our only NaN values should be in `FireplaceQu`, which are NaN values but not missing values:
+And now our `X_train` no longer contains any NaN values:
 
 
 ```python
@@ -4851,7 +4851,7 @@ ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
 
 
 ```python
-# __SOlUTION__
+# __SOLUTION__
 import matplotlib.pyplot as plt
 
 fig, ax = plt.subplots()
