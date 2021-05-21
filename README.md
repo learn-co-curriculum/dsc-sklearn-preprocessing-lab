@@ -11,10 +11,8 @@ You will be able to:
 * Practice filtering down to relevant columns
 * Practice applying `sklearn.impute` to fill in missing values
 * Practice applying `sklearn.preprocessing`:
-  * `LabelBinarizer` for converting binary categories to 0 and 1 within a single column
+  * `OrdinalEncoder` for converting binary categories to 0 and 1 within a single column
   * `OneHotEncoder` for creating multiple "dummy" columns to represent multiple categories
-  * `PolynomialFeatures` for creating interaction terms
-  * `StandardScaler` for scaling data
 
 ## Your Task: Prepare the Ames Housing Dataset for Modeling
 
@@ -34,21 +32,13 @@ Often for reasons outside of a data scientist's control, datasets are missing so
 
 #### 3. Convert Categorical Features into Numbers
 
-A built-in assumption of the scikit-learn library is that all data being fed into a machine learning model is already in a numeric format, otherwise you will get a `ValueError` when you try to fit a model. In this step you will use a `LabelBinarizer` to replace data within individual non-numeric columns with 0s and 1s, and a `OneHotEncoder` to replace columns containing more than 2 categories with multiple "dummy" columns containing 0s and 1s.
+A built-in assumption of the scikit-learn library is that all data being fed into a machine learning model is already in a numeric format, otherwise you will get a `ValueError` when you try to fit a model. In this step you will use an `OrdinalEncoder` to replace data within individual non-numeric columns with 0s and 1s, and a `OneHotEncoder` to replace columns containing more than 2 categories with multiple "dummy" columns containing 0s and 1s.
 
 At this point, a scikit-learn model should be able to run without errors!
 
-#### 4. Add Interaction Terms
+#### 4. Preprocess Test Data
 
-This step gets into the feature engineering part of preprocessing. Does our model improve as we add interaction terms? In this step you will use a `PolynomialFeatures` transformer to augment the existing features of the dataset.
-
-#### 5. Scale Data
-
-Because we are using a model with regularization, it's important to scale the data so that coefficients are not artificially penalized based on the units of the original feature. In this step you will use a `StandardScaler` to standardize the units of your data.
-
-#### 6. Preprocess Test Data
-
-Apply Steps 1-5 to the test data in order to perform a final model evaluation.
+Apply Steps 1-3 to the test data in order to perform a final model evaluation.
 
 ## Lab Setup
 
@@ -103,16 +93,16 @@ assert X_train.shape[0] == y_train.shape[0]
 
 #### Fitting a Model
 
-For this lab we will be using an `ElasticNet` model from scikit-learn ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.ElasticNet.html)). You are welcome to read about the details of this model implementation at that link, but for the purposes of this lab, what you need to know is that this is a form of linear regression with *regularization* (meaning we will need to standardize the features).
+For this lab we will be using a `LinearRegression` model from scikit-learn ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.linear_model.LinearRegression.html)).
 
 Right now, we have not done any preprocessing, so we expect that trying to fit a model will fail:
 
 
 ```python
 # Run this cell without changes
-from sklearn.linear_model import ElasticNet
+from sklearn.linear_model import LinearRegression
 
-model = ElasticNet(random_state=1)
+model = LinearRegression()
 model.fit(X_train, y_train)
 ```
 
@@ -395,7 +385,7 @@ Great! Now we have completed Step 2.
 
 ## 3. Convert Categorical Features into Numbers
 
-Despite dropping irrelevant columns and filling in those NaN values, if we feed the current `X_train` into our scikit-learn `ElasticNet` model, it will crash:
+Despite dropping irrelevant columns and filling in those NaN values, if we feed the current `X_train` into our scikit-learn `LinearRegression` model, it will crash:
 
 
 ```python
@@ -430,7 +420,9 @@ Anything that is already `float64` or `int64` will work with our model, but thes
 * `FireplaceQu` (currently type `object`)
 * `LotFrontage_Missing` (currently type `bool`)
 
-There are two main approaches to converting these values, depending on whether there are 2 values (meaning the categorical variable can be converted into a single binary number) or more than 2 values (meaning we need to create extra columns to represent all categories). (If there is only 1 value, this is not a useful feature for the purposes of predictive analysis.)
+There are two main approaches to converting these values, depending on whether there are 2 values (meaning the categorical variable can be converted into a single binary number) or more than 2 values (meaning we need to create extra columns to represent all categories).
+
+(If there is only 1 value, this is not a useful feature for the purposes of predictive analysis because every single row contains the same information.)
 
 In the cell below, we inspect the value counts of the specified features:
 
@@ -449,7 +441,7 @@ So, it looks like `Street` and `LotFrontage_Missing` have only 2 categories and 
 
 ### Binary Categories
 
-For binary categories, we will use `LabelBinarizer` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.LabelBinarizer.html)) to convert the categories of `Street` and `LotFrontage_Missing` into binary values (0s and 1s).
+For binary categories, we will use an `OrdinalEncoder` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.OrdinalEncoder.html)) to convert the categories of `Street` and `LotFrontage_Missing` into binary values (0s and 1s).
 
 Just like in Step 2 when we used the `MissingIndicator` and `SimpleImputer`, we will follow these steps:
 
@@ -465,46 +457,50 @@ Let's start with transforming `Street`:
 ```python
 # Replace None with appropriate code
 
-# (0) import LabelBinarizer from sklearn.preprocessing
+# (0) import OrdinalEncoder from sklearn.preprocessing
 None
 
-# (1) Create a variable street_train that is the
+# (1) Create a variable street_train that contains the
 # relevant column from X_train
+# (Use double brackets [[]] to get the appropriate shape)
 street_train = None
 
-# (2) Instantiate a LabelBinarizer
-binarizer_street = None
+# (2) Instantiate an OrdinalEncoder
+encoder_street = None
 
-# (3) Fit the binarizer on street_train
+# (3) Fit the encoder on street_train
 None
 
-# Inspect the classes of the fitted binarizer
-binarizer_street.classes_
+# Inspect the categories of the fitted encoder
+encoder_street.categories_[0]
 ```
 
-The `.classes_` attribute of `LabelBinarizer` is only present once the `.fit` method has been called. (The trailing `_` indicates this convention.)
+The `.categories_` attribute of `OrdinalEncoder` is only present once the `.fit` method has been called. (The trailing `_` indicates this convention.)
 
-What this tells us is that when `binarizer_street` is used to transform the street data into 1s and 0s, `0` will mean `'Grvl'` (gravel) in the original data, and `1` will mean `'Pave'` (paved) in the original data.
+What this tells us is that when `encoder_street` is used to transform the street data into 1s and 0s, `0` will mean `'Grvl'` (gravel) in the original data, and `1` will mean `'Pave'` (paved) in the original data.
 
 The eventual scikit-learn model only cares about the 1s and 0s, but this information can be useful for us to understand what our code is doing and help us debug when things go wrong.
 
-Now let's transform `street_train` with the fitted binarizer:
+Now let's transform `street_train` with the fitted encoder:
 
 
 ```python
 # Replace None with appropriate code
 
-# (4) Transform street_train using the binarizer and
-# assign the result to street_binarized_train
-street_binarized_train = None
+# (4) Transform street_train using the encoder and
+# assign the result to street_encoded_train
+street_encoded_train = None
 
-# Visually inspect street_binarized_train
-street_binarized_train
+# Flatten for appropriate shape
+street_encoded_train = street_encoded_train.flatten()
+
+# Visually inspect street_encoded_train
+street_encoded_train
 ```
 
 All of the values we see appear to be `1` right now, but that makes sense since there were only 4 properties with gravel (`0`) streets in `X_train`.
 
-Now let's replace the original `Street` column with the binarized version:
+Now let's replace the original `Street` column with the encoded version:
 
 
 ```python
@@ -534,26 +530,29 @@ Now, repeat the same process with `LotFrontage_Missing`:
 # (1) We already have a variable frontage_missing_train
 # from earlier, no additional step needed
 
-# (2) Instantiate a LabelBinarizer for missing frontage
-binarizer_frontage_missing = None
+# (2) Instantiate an OrdinalEncoder for missing frontage
+encoder_frontage_missing = None
 
-# (3) Fit the binarizer on frontage_missing_train
+# (3) Fit the encoder on frontage_missing_train
 None
 
-# Inspect the classes of the fitted binarizer
-binarizer_frontage_missing.classes_
+# Inspect the categories of the fitted encoder
+encoder_frontage_missing.categories_[0]
 ```
 
 
 ```python
 # Replace None with appropriate code
 
-# (4) Transform frontage_missing_train using the binarizer and
-# assign the result to frontage_missing_binarized_train
-frontage_missing_binarized_train = None
+# (4) Transform frontage_missing_train using the encoder and
+# assign the result to frontage_missing_encoded_train
+frontage_missing_encoded_train = None
 
-# Visually inspect frontage_missing_binarized_train
-frontage_missing_binarized_train
+# Flatten for appropriate shape
+frontage_missing_encoded_train = frontage_missing_encoded_train.flatten()
+
+# Visually inspect frontage_missing_encoded_train
+frontage_missing_encoded_train
 ```
 
 
@@ -603,7 +602,7 @@ df_example["LotFrontage_Missing"] = df_example["LotFrontage_Missing"].astype(int
 df_example
 ```
 
-This code is casting every value in the `LotFrontage_Missing` column to an integer, achieving the same result as the `LabelBinarizer` example with less code.
+This code is casting every value in the `LotFrontage_Missing` column to an integer, achieving the same result as the `OrdinalEncoder` example with less code.
 
 The downside of using this approach is that it doesn't fit into a scikit-learn pipeline as neatly because it is using `pandas` to do the transformation instead of scikit-learn.
 
@@ -654,7 +653,7 @@ fireplace_qu_encoded_train = None
 fireplace_qu_encoded_train
 ```
 
-Notice that this time, unlike with `MissingIndicator`, `SimpleImputer`, or `LabelBinarizer`, we have created multiple columns of data out of a single column. The code below converts this unlabeled NumPy array into a readable pandas dataframe in preparation for merging it back with the rest of `X_train`:
+Notice that this time, unlike with `MissingIndicator`, `SimpleImputer`, or `OrdinalEncoder`, we have created multiple columns of data out of a single column. The code below converts this unlabeled NumPy array into a readable pandas dataframe in preparation for merging it back with the rest of `X_train`:
 
 
 ```python
@@ -734,220 +733,11 @@ from sklearn.model_selection import cross_val_score
 cross_val_score(model, X_train, y_train, cv=3)
 ```
 
-Not terrible, we are explaining between 66% and 81% of the variance in the target with our current feature set.
+Not terrible, we are explaining between 66% and 80% of the variance in the target with our current feature set. Let's say that this is our final model and move on to preparing the test data.
 
-## 4. Add Interaction Terms
+## 4. Preprocess Test Data
 
-Now that we have completed the minimum preprocessing to run a model without errors, let's try to improve the model performance.
-
-Linear models (including `ElasticNet`) are limited in the information they can learn because they are assuming a linear relationship between features and target. Often our real-world features aren't related to the target this way:
-
-
-```python
-# Run this cell without changes
-import matplotlib.pyplot as plt
-
-fig, ax = plt.subplots()
-ax.scatter(X_train["LotArea"], y_train, alpha=0.2)
-ax.set_xlabel("Lot Area")
-ax.set_ylabel("Sale Price")
-ax.set_title("Lot Area vs. Sale Price for Ames Housing Data");
-```
-
-Sometimes we can improve the linearity by introducing an *interaction term*. In this case, multiplying the lot area by the overall quality:
-
-
-```python
-# Run this cell without changes
-
-fig, ax = plt.subplots()
-ax.scatter(X_train["LotArea"]*X_train["OverallQual"], y_train, alpha=0.2)
-ax.set_xlabel("Lot Area x Overall Quality")
-ax.set_ylabel("Sale Price")
-ax.set_title("(Lot Area x Overall Quality) vs. Sale Price for Ames Housing Data");
-```
-
-While we could manually add individual interaction terms, there is a preprocessor from scikit-learn called `PolynomialFeatures` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.PolynomialFeatures.html)) that will generate all combinations of interaction terms (as well as polynomial terms, e.g. `Lot Area` squared) for a set of columns.
-
-Specifically, let's generate interaction terms for `LotFrontage`, `LotArea`, `OverallQual`, `YearBuilt`, and `GrLivArea`.
-
-To use `PolynomialFeatures`, we'll follow the same steps as `OneHotEncoder` (creating a new dataframe before merging), because it is another transformer that creates additional columns.
-
-
-```python
-# Replace None with appropriate code
-
-# (0) import PolynomialFeatures from sklearn.preprocessing
-None
-
-# (1) Create a variable poly_columns
-# extracted from X_train
-poly_column_names = [
-    "LotFrontage",
-    "LotArea",
-    "OverallQual",
-    "YearBuilt",
-    "GrLivArea"
-]
-poly_columns_train = X_train[poly_column_names]
-
-# (2) Instantiate a PolynomialFeatures transformer poly
-# with interaction_only=True and include_bias=False
-poly = None
-
-# (3) Fit the transformer on poly_columns_train
-None
-
-# Inspect the features created by the fitted transformer
-poly.get_feature_names(poly_column_names)
-```
-
-
-```python
-# Replace None with appropriate code
-
-# (4) Transform poly_columns using the transformer and
-# assign the result poly_columns_expanded_train
-poly_columns_expanded_train = None
-
-# Visually inspect poly_columns_expanded_train
-poly_columns_expanded_train
-```
-
-
-```python
-# Replace None with appropriate code
-
-# (5a) Make the transformed data into a dataframe
-poly_columns_expanded_train = pd.DataFrame(
-    # Pass in NumPy array created in previous step
-    None,
-    # Set the column names to the features created by poly
-    columns=poly.get_feature_names(poly_column_names),
-    # Set the index to match X_train's index
-    index=None
-)
-
-# Visually inspect new dataframe
-poly_columns_expanded_train
-```
-
-
-```python
-# Run this cell without changes
-
-# (5b) Drop original columns
-X_train.drop(poly_column_names, axis=1, inplace=True)
-
-# (5c) Concatenate the new dataframe with current X_train
-X_train = pd.concat([X_train, poly_columns_expanded_train], axis=1)
-
-# Visually inspect X_train
-X_train
-```
-
-
-```python
-# Run this cell without changes
-X_train.info()
-```
-
-Great, now we have 31 features instead of 21 features! Let's see how the model performs now:
-
-
-```python
-# Run this cell without changes
-cross_val_score(model, X_train, y_train, cv=3)
-```
-
-Hmm, got some metrics, so it didn't totally crash, but what is that warning message?
-
-A `ConvergenceWarning` means that the **gradient descent** algorithm within the `ElasticNet` model failed to find a minimum based on the specified parameters. While the warning message suggests modifyig the parameters (number of iterations), your first thought when you see a model fail to converge should be **do I need to scale the data**?
-
-Scaling data is especially important when there are substantial differences in the units of different features. Let's take a look at the values in our current `X_train`:
-
-
-```python
-# Run this cell without changes
-X_train.describe()
-```
-
-Looks like we have mean values ranging from about $0.6$ (for fireplaces) to $2.1 x 10^7$ (21 million, for `Lot Area x YearBuilt`). With the regularization applied by `ElasticNet`, the coefficients are being penalized very disproportionately!
-
-In the next step, we'll apply scaling to address this.
-
-## 5. Scale Data
-
-This is the final scikit-learn preprocessing task of the lab! The `StandardScaler` ([documentation here](https://scikit-learn.org/stable/modules/generated/sklearn.preprocessing.StandardScaler.html)) standarizes features by removing the mean and scaling to unit variance. This will help our data to meet the assumptions of the L1 and L2 regularizers in our `ElasticNet` model.
-
-Unlike previous preprocessing steps, we are going to apply the `StandardScaler` to the entire `X_train`, not just a single column or a subset of columns.
-
-
-```python
-# Replace None with appropriate code
-
-# (0) import StandardScaler from sklearn.preprocessing
-None
-
-# (1) We don't actually have to select anything since 
-# we're using the full X_train
-
-# (2) Instantiate a StandardScaler
-scaler = None
-
-# (3) Fit the scaler on X_train
-None
-
-# (4) Transform X_train using the scaler and
-# assign the result to X_train_scaled
-X_train_scaled = None
-
-# Visually inspect X_train_scaled
-X_train_scaled
-```
-
-
-```python
-# Run this cell without changes
-
-# (5) Make the transformed data back into a dataframe
-X_train = pd.DataFrame(
-    # Pass in NumPy array
-    X_train_scaled,
-    # Set the column names to the original names
-    columns=X_train.columns,
-    # Set the index to match X_train's original index
-    index=X_train.index
-)
-
-# Visually inspect new dataframe
-X_train
-```
-
-
-```python
-# Run this cell without changes
-X_train.describe()
-```
-
-Great, now the means of the values are all much more centered. Let's see how the model performs now:
-
-
-```python
-# Run this cell without changes
-cross_val_score(model, X_train, y_train, cv=3)
-```
-
-Well, that was only a minor improvement over our first model. Seems like the interaction terms didn't provide that much information after all! There is plenty more feature engineering you could do if this were a real project, but we'll stop there.
-
-### Quick Scaling FAQs:
-
-1. **Do you only need to scale if you're using `PolynomialFeatures`?** No, we should have scaled regardless. `PolynomialFeatures` just exaggerated the difference in the units and caused the model to produce a warning, but it's a best practice to scale whenever your model has any distance-based metric. (In this case, the regularization within `ElasticNet` is distance-based.)
-2. **Do you really need to scale one-hot encoded features, if they are already just 0 or 1?** Professional opinions vary on this. Binary values already violate the assumptions of some models, so you might want to investigate empirically with your particular data and model whether you get better performance by scaling the one-hot encoded features or leaving them as just 0 and 1.
-
-## 6. Preprocess Test Data
-
-> Apply Steps 1-5 to the test data in order to perform a final model evaluation.
+> Apply Steps 1-3 to the test data in order to perform a final model evaluation.
 
 This part is done for you, and it should work automatically, assuming you didn't change the names of any of the transformer objects. Note that we are intentionally **not instantiating or fitting the transformers** here, because you always want to fit transformers on the training data only.
 
@@ -987,15 +777,15 @@ X_test.isna().sum()
 ```python
 # Run this cell without changes
 
-# Binarize street type
-street_test = X_test["Street"]
-street_binarized_test = binarizer_street.transform(street_test)
-X_test["Street"] = street_binarized_test
+# Encode street type
+street_test = X_test[["Street"]]
+street_encoded_test = encoder_street.transform(street_test).flatten()
+X_test["Street"] = street_encoded_test
 
-# Binarize frontage missing
-frontage_missing_test = X_test["LotFrontage_Missing"]
-frontage_missing_binarized_test = binarizer_frontage_missing.transform(frontage_missing_test)
-X_test["LotFrontage_Missing"] = frontage_missing_binarized_test
+# Encode frontage missing
+frontage_missing_test = X_test[["LotFrontage_Missing"]]
+frontage_missing_encoded_test = encoder_frontage_missing.transform(frontage_missing_test).flatten()
+X_test["LotFrontage_Missing"] = frontage_missing_encoded_test
 
 # One-hot encode fireplace quality
 fireplace_qu_test = X_test[["FireplaceQu"]]
@@ -1012,45 +802,6 @@ X_test = pd.concat([X_test, fireplace_qu_encoded_test], axis=1)
 X_test
 ```
 
-*Step 4: Add Interaction Terms*
-
-
-```python
-# Run this cell without changes
-
-# (1) select relevant data
-poly_columns_test = X_test[poly_column_names]
-
-# (4) transform using fitted transformer
-poly_columns_expanded_test = poly.transform(poly_columns_test) 
-
-# (5) add back to original dataset
-poly_columns_expanded_test = pd.DataFrame(
-    poly_columns_expanded_test,
-    columns=poly.get_feature_names(poly_column_names),
-    index=X_test.index
-)
-X_test.drop(poly_column_names, axis=1, inplace=True)
-X_test = pd.concat([X_test, poly_columns_expanded_test], axis=1)
-
-# Visually inspect X_test
-X_test
-```
-
-*Step 5: Scale Data*
-
-
-```python
-# Run this cell without changes
-X_test_scaled = scaler.transform(X_test)
-X_test = pd.DataFrame(
-    X_test_scaled,
-    columns=X_test.columns,
-    index=X_test.index
-)
-X_test
-```
-
 Fit the model on the full training set, evaluate on test set:
 
 
@@ -1064,4 +815,4 @@ Great, that worked! Now we have completed the full process of preprocessing the 
 
 ## Summary
 
-In this cumulative lab, you used various techniques to prepare the Ames Housing data for modeling. You filtered down the full dataset to only relevant columns, filled in missing values, converted categorical data into numeric data, added interaction terms, and scaled the data. Each time, you practiced the scikit-learn transformer workflow by instantiating the transformer, fitting on the relevant training data, transforming the training data, and transforming the test data at the end (without re-instantiating or re-fitting the transformer object).
+In this cumulative lab, you used various techniques to prepare the Ames Housing data for modeling. You filtered down the full dataset to only relevant columns, filled in missing values, and converted categorical data into numeric data. Each time, you practiced the scikit-learn transformer workflow by instantiating the transformer, fitting on the relevant training data, transforming the training data, and transforming the test data at the end (without re-instantiating or re-fitting the transformer object).
